@@ -3,19 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 import { categories } from "../data/mockData";
+import LocationPicker from "../components/LocationPicker";
 
 const ListResourcePage = () => {
   const navigate = useNavigate();
   const { addResource } = useApp();
-  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" });
+  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!form.location || !form.coordinates) return;
+    // simple distance from campus center 28.5445,77.1925
+    const dLat = form.coordinates.lat - 28.5445;
+    const dLng = form.coordinates.lng - 77.1925;
+    const distKm = Math.sqrt(dLat*dLat + dLng*dLng) * 111;
+    const distance = `${distKm.toFixed(1)} km`;
     const resource = {
       ...form,
+      distance,
       hourlyRate: parseInt(form.hourlyRate) || 0,
       dailyRate: parseInt(form.dailyRate) || 0,
       minCharge: parseInt(form.minCharge) || 0,
@@ -41,7 +49,7 @@ const ListResourcePage = () => {
           <p style={{ color: "var(--text-secondary)", marginBottom: "20px", fontSize: '14px', lineHeight: 1.6 }}>Your resource is pending admin approval. You'll be notified once it's live — usually within a few hours.</p>
           <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             <button className="btn btn-primary" onClick={() => navigate("/discover")}><i className="fa-solid fa-compass"></i> Browse resources</button>
-            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" }); }}><i className="fa-solid fa-plus"></i> List another</button>
+            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" }); }}><i className="fa-solid fa-plus"></i> List another</button>
           </div>
         </motion.div>
       </div>
@@ -87,8 +95,9 @@ const ListResourcePage = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Location *</label>
-              <input type="text" name="location" className="form-input" placeholder="e.g., Hostel Block A, Room 312" value={form.location} onChange={handleChange} required />
+              <label className="form-label"><i className="fa-solid fa-map-location-dot"></i> Pinpoint location *</label>
+              <LocationPicker value={form} onChange={({ location, coordinates }) => setForm({ ...form, location, coordinates })} />
+              {!form.location && <p style={{ fontSize: 11, color: "var(--danger)", marginTop: 6 }}>Location is required — click on map or pick a preset.</p>}
             </div>
 
             <div className="form-group">

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "../context/AppContext";
+import LocationMap from "../components/LocationMap";
 
 const ResourceDetailPage = () => {
   const { id } = useParams();
@@ -161,6 +162,17 @@ const ResourceDetailPage = () => {
               </div>
               <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--text-muted)", display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className="fa-solid fa-location-dot"></i> {resource.location} • {resource.distance} away
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: "14px", marginTop: "14px" }}>
+              <h4 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", alignItems: "center", gap: 6 }}>
+                <i className="fa-solid fa-map-location-dot" style={{ color: "var(--primary)" }}></i> Pinpoint location
+              </h4>
+              <LocationMap lat={resource.coordinates?.lat} lng={resource.coordinates?.lng} locationLabel={resource.location} height="200px" />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11 }}>
+                <span style={{ color: "var(--text-muted)", fontFamily: "JetBrains Mono, monospace" }}><i className="fa-solid fa-location-crosshairs"></i> {resource.coordinates?.lat.toFixed(4)}, {resource.coordinates?.lng.toFixed(4)}</span>
+                <span className="badge badge-neutral"><i className="fa-solid fa-person-walking"></i> {resource.distance} away</span>
               </div>
             </div>
           </motion.div>

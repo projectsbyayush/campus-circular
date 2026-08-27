@@ -103,6 +103,16 @@ export const AppProvider = ({ children }) => {
   const flagResource = (resourceId) => setAllResources(allResources.map((r) => (r.id === resourceId ? { ...r, isFlagged: true } : r)));
   const suspendUser = (userId) => setAllUsers(allUsers.map((u) => (u.id === userId ? { ...u, isSuspended: !u.isSuspended } : u)));
 
+  const deleteResource = (resourceId) => {
+    setAllResources(allResources.filter(r => r.id !== resourceId));
+  };
+  const toggleAvailability = (resourceId) => {
+    setAllResources(allResources.map(r => r.id === resourceId ? { ...r, availability: r.availability === "Available" ? "Borrowed" : "Available" } : r));
+  };
+  const updateResource = (resourceId, updates) => {
+    setAllResources(allResources.map(r => r.id === resourceId ? { ...r, ...updates } : r));
+  };
+
   const initiateExchange = (resourceId, duration, startDate) => {
     const resource = allResources.find((r) => r.id === resourceId);
     if (!resource) return null;
@@ -132,7 +142,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, stats, pendingList,
     searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters, cart, setCart, activeExchanges,
-    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, initiateExchange, confirmAgreement, updateExchangeStatus, raiseDispute, markNotificationRead,
+    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, updateResource, initiateExchange, confirmAgreement, updateExchangeStatus, raiseDispute, markNotificationRead,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

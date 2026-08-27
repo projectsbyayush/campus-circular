@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 import { categories } from "../data/mockData";
+import DiscoverMap from "../components/DiscoverMap";
 
 const catIcons = {
   Electronics: "fa-solid fa-microchip",
@@ -17,6 +18,7 @@ const catIcons = {
 
 const DiscoverPage = () => {
   const { allResources, allUsers, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters } = useApp();
+  const navigate = useNavigate();
   const getOwnerAvatar = (ownerId) => allUsers.find(u => u.id === ownerId)?.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=user${ownerId}`;
   const [view, setView] = useState("grid");
 
@@ -96,14 +98,17 @@ const DiscoverPage = () => {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <span style={{ color: "var(--text-secondary)", fontSize: "13px", fontFamily: 'JetBrains Mono, monospace' }}>
-          {filteredResources.length} resources found
+          {filteredResources.length} resources found <span style={{ color: "var(--text-muted)" }}>• {filteredResources.filter(r=>r.coordinates).length} pinpointed</span>
         </span>
         <div style={{ display: "flex", gap: "6px", background: 'var(--bg-surface)', padding: '4px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)' }}>
-          <button className={`btn btn-sm ${view === "grid" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("grid")} style={{ borderRadius: '999px' }}>
+          <button className={`btn btn-sm ${view === "grid" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("grid")} style={{ borderRadius: '999px' }} title="Grid">
             <i className="fa-solid fa-table-cells-large"></i>
           </button>
-          <button className={`btn btn-sm ${view === "list" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("list")} style={{ borderRadius: '999px' }}>
+          <button className={`btn btn-sm ${view === "list" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("list")} style={{ borderRadius: '999px' }} title="List">
             <i className="fa-solid fa-list"></i>
+          </button>
+          <button className={`btn btn-sm ${view === "map" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("map")} style={{ borderRadius: '999px' }} title="Pinpoint map">
+            <i className="fa-solid fa-map-location-dot"></i>
           </button>
         </div>
       </div>
@@ -114,6 +119,8 @@ const DiscoverPage = () => {
           <h3 className="empty-state-title">No resources found</h3>
           <p className="empty-state-text">Try adjusting your filters or search terms</p>
         </div>
+      ) : view === "map" ? (
+        <DiscoverMap resources={filteredResources} onSelect={(id) => navigate(`/resource/${id}`)} />
       ) : view === "grid" ? (
         <div className="grid grid-3">
           {filteredResources.map((resource, i) => (

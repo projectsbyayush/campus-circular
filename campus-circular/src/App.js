@@ -8,6 +8,7 @@ import ResourceDetailPage from "./pages/ResourceDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import ExchangePage from "./pages/ExchangePage";
 import MyExchangesPage from "./pages/MyExchangesPage";
+import MyListingsPage from "./pages/MyListingsPage";
 import ListResourcePage from "./pages/ListResourcePage";
 import AiSearchPage from "./pages/AiSearchPage";
 import CampusImpactPage from "./pages/CampusImpactPage";
@@ -129,6 +130,9 @@ const Navbar = () => {
                     <button onClick={() => { setShowProfileMenu(false); navigate("/exchanges"); }} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <i className="fa-solid fa-arrow-right-arrow-left" style={{ width: '14px' }}></i> My exchanges
                     </button>
+                    <button onClick={() => { setShowProfileMenu(false); navigate("/my-listings"); }} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', background: 'none', border: 'none', color: 'var(--text)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <i className="fa-solid fa-box" style={{ width: '14px' }}></i> My listings
+                    </button>
                     <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
                     <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', background: 'none', border: 'none', color: 'var(--danger)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <i className="fa-solid fa-right-from-bracket" style={{ width: '14px' }}></i> Sign out
@@ -187,6 +191,7 @@ function AppContent() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/exchange/:id" element={<ExchangePage />} />
             <Route path="/exchanges" element={<MyExchangesPage />} />
+            <Route path="/my-listings" element={<MyListingsPage />} />
             <Route path="/list" element={<ListResourcePage />} />
             <Route path="/ai-search" element={<AiSearchPage />} />
             <Route path="/impact" element={<CampusImpactPage />} />
