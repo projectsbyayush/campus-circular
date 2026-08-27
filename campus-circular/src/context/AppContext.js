@@ -168,6 +168,32 @@ export const AppProvider = ({ children }) => {
   const rejectResource = (resourceId) => setPendingList(prev => prev.filter((p) => p.id !== resourceId));
   const flagResource = (resourceId) => setAllResources(prev => prev.map((r) => (r.id === resourceId ? { ...r, isFlagged: true } : r)));
   const suspendUser = (userId) => setAllUsers(prev => prev.map((u) => (u.id === userId ? { ...u, isSuspended: !u.isSuspended } : u)));
+  const createUser = (data) => {
+    const newId = Math.max(0, ...allUsers.map(u=>u.id)) + 1;
+    const newUser = {
+      id: newId,
+      name: data.name,
+      department: data.department || "General",
+      year: data.year || "1st Year",
+      avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(data.name)}`,
+      verified: true,
+      trustScore: 4.5,
+      ratings: 4.5,
+      successfulExchanges: 0,
+      lateReturns: 0,
+      disputes: 0,
+      totalShared: 0,
+      moneySaved: 0,
+      bio: data.bio || "New campus member",
+      phone: data.phone || "",
+      email: data.email || `${data.name.toLowerCase().replace(/\s+/g,"")}@college.edu`,
+      joinDate: new Date().toISOString().split("T")[0],
+      isSuspended: false,
+      isAdmin: false,
+    };
+    setAllUsers(prev => [...prev, newUser]);
+    return newUser;
+  };
   const deleteResource = (resourceId) => {
     setAllResources(prev => prev.filter(r => r.id !== resourceId));
     setAllExchanges(prev => prev.filter(e => e.resourceId !== resourceId));
@@ -306,7 +332,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, stats, pendingList,
     searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters, cart, setCart, activeExchanges,
-    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, togglePublic, updateResource, addConditionReport, addExchangeConditionReport, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
+    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, createUser, deleteResource, toggleAvailability, togglePublic, updateResource, addConditionReport, addExchangeConditionReport, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

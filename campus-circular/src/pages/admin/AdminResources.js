@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 
 const AdminResources = () => {
-  const { allResources, allUsers, approveResource, rejectResource, flagResource } = useApp();
+  const { allResources, allUsers, approveResource, rejectResource, flagResource, deleteResource } = useApp();
   const [activeTab, setActiveTab] = useState("pending");
   const [search, setSearch] = useState("");
 
@@ -78,16 +78,17 @@ const AdminResources = () => {
                     <td style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.dailyRate}</td>
                     <td><span className={`badge ${resource.isFlagged ? "badge-danger" : resource.isApproved ? "badge-success" : "badge-warning"}`}>{resource.isFlagged ? "Flagged" : resource.isApproved ? "Approved" : "Pending"}</span></td>
                     <td>
-                      <div style={{ display: "flex", gap: "6px" }}>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                         {!resource.isApproved && (
                           <>
-                            <button className="btn btn-sm btn-success" style={{ borderRadius: '999px' }} onClick={() => approveResource(resource.id)}><i className="fa-solid fa-check"></i></button>
-                            <button className="btn btn-sm btn-danger" style={{ borderRadius: '999px' }} onClick={() => rejectResource(resource.id)}><i className="fa-solid fa-xmark"></i></button>
+                            <button className="btn btn-sm btn-success" style={{ borderRadius: '999px' }} onClick={() => approveResource(resource.id)} title="Approve"><i className="fa-solid fa-check"></i></button>
+                            <button className="btn btn-sm btn-danger" style={{ borderRadius: '999px' }} onClick={() => rejectResource(resource.id)} title="Reject"><i className="fa-solid fa-xmark"></i></button>
                           </>
                         )}
                         {resource.isApproved && !resource.isFlagged && (
-                          <button className="btn btn-sm btn-danger" style={{ borderRadius: '999px' }} onClick={() => flagResource(resource.id)}><i className="fa-solid fa-flag"></i></button>
+                          <button className="btn btn-sm btn-danger" style={{ borderRadius: '999px' }} onClick={() => flagResource(resource.id)} title="Flag"><i className="fa-solid fa-flag"></i></button>
                         )}
+                        <button className="btn btn-sm btn-ghost" style={{ borderRadius: '999px', color: "var(--danger)", border: "1px solid var(--border)" }} onClick={() => { if(window.confirm(`Admin delete "${resource.name}"? This will remove it for everyone.`)) deleteResource(resource.id); }} title="Admin delete — works for any status"><i className="fa-regular fa-trash-can"></i></button>
                       </div>
                     </td>
                   </tr>
