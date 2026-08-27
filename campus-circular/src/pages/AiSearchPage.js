@@ -211,7 +211,7 @@ const AiSearchPage = () => {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:"10px",marginBottom:"12px",marginLeft:"6px"}}>
                   {msg.resources.map(r=>{
                     const v = getCardVisual(r);
-                    const hasUploaded = r.images?.[0]?.startsWith("data:");
+                    const hasUploaded = r.images?.[0] && r.images[0].trim() !== "";
                     return (
                     <motion.div key={r.id} className="card" style={{cursor:"pointer",overflow:"hidden"}} whileHover={{y:-2}} onClick={()=>navigate(`/resource/${r.id}`)}>
                       {hasUploaded ? (

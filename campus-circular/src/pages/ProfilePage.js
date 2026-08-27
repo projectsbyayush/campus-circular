@@ -104,7 +104,7 @@ const ProfilePage = () => {
               <div className="grid grid-2">
                 {userResources.map((r) => {
                   const v = getCardVisual(r);
-                  const hasUploaded = r.images?.[0]?.startsWith("data:");
+                  const hasUploaded = r.images?.[0] && r.images[0].trim() !== "";
                   return (
                   <Link to={`/resource/${r.id}`} key={r.id} style={{ textDecoration: "none" }}>
                     <div className="card" style={{ display: "flex", overflow: "hidden" }}>

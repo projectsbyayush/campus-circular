@@ -67,14 +67,14 @@ const ResourceDetailPage = () => {
       <div style={{ display: "grid", gridTemplateColumns: "1.55fr 0.9fr", gap: "28px" }}>
         <div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <div style={{ position: "relative", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: "20px", border: '1px solid var(--border)', height: "420px", background: resource.images?.[0]?.startsWith("data:") ? `url(${resource.images[0]}) center/cover no-repeat` : getCardVisual(resource).bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {!resource.images?.[0]?.startsWith("data:") && <i className={getCardVisual(resource).icon} style={{ fontSize: 96, color: "white", opacity: 0.92 }}></i>}
-              {resource.images?.[0]?.startsWith("data:") && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent 60%)" }} />}
+            <div style={{ position: "relative", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: "20px", border: '1px solid var(--border)', height: "420px", background: resource.images?.[0] && resource.images[0].trim() !== "" ? `url(${resource.images[0]}) center/cover no-repeat` : getCardVisual(resource).bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {!resource.images?.[0] && resource.images[0].trim() !== "" && <i className={getCardVisual(resource).icon} style={{ fontSize: 96, color: "white", opacity: 0.92 }}></i>}
+              {resource.images?.[0] && resource.images[0].trim() !== "" && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent 60%)" }} />}
               <div style={{ position: "absolute", top: "14px", left: "14px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <span className="badge badge-neutral" style={{ background: 'rgba(15,14,13,0.8)', backdropFilter: 'blur(8px)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
                 <span className="badge badge-primary">{resource.condition}</span>
                 {resource.listingType === "donate" && <span className="badge" style={{ background: "#16A34A", color: "white", borderColor: "#16A34A" }}><i className="fa-solid fa-gift"></i> Donate • FREE</span>}
-                {resource.images?.[0]?.startsWith("data:") && <span className="badge" style={{ background: "var(--success)", color: "white" }}><i className="fa-solid fa-image"></i> Photo</span>}
+                {resource.images?.[0] && resource.images[0].trim() !== "" && <span className="badge" style={{ background: "var(--success)", color: "white" }}><i className="fa-solid fa-image"></i> Photo</span>}
               </div>
               <div style={{ position: "absolute", top: "14px", right: "14px", padding: "6px 12px", borderRadius: "999px", background: resource.availability === "Available" ? "var(--success)" : "var(--danger)", color: "white", fontSize: "12px", fontWeight: "600", display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className={`fa-solid ${resource.availability === "Available" ? "fa-circle-check" : "fa-circle-xmark"}`} style={{ fontSize: '11px' }}></i> {resource.availability}

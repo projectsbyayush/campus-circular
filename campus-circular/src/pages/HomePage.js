@@ -90,13 +90,14 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Hero preview strip - Font Awesome icons */}
+            {/* Hero preview strip - actual images where available */}
             <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto', textAlign: 'left' }}>
               {allResources.filter(r=>r.isApproved).slice(0,3).map(r => {
                 const v = getCardVisual(r);
+                const hasImage = r.images?.[0] && r.images[0].trim() !== "";
                 return (
                   <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', gap: '10px', padding: '10px', alignItems: 'center', boxShadow: 'var(--shadow-soft)' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><i className={v.icon}></i></div>
+                    {hasImage ? <img src={r.images[0]} alt={r.name} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><i className={v.icon}></i></div>}
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ').slice(0,2).join(' ')}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.category} • ₹{r.dailyRate}/day</div>
@@ -162,7 +163,7 @@ const HomePage = () => {
                 style={{ overflow: 'hidden' }}
               >
                 {(() => {
-                  const hasUploaded = resource.images?.[0]?.startsWith("data:");
+                  const hasUploaded = resource.images?.[0] && resource.images[0].trim() !== "";
                   const v = getCardVisual(resource);
                   return (
                     <div style={{ height: '180px', background: hasUploaded ? `url(${resource.images[0]}) center/cover no-repeat` : v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>

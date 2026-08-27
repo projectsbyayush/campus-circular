@@ -154,7 +154,7 @@ const DiscoverPage = () => {
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card resource-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 {(() => {
-                  const hasUploaded = resource.images?.[0]?.startsWith("data:");
+                  const hasUploaded = resource.images?.[0] && resource.images[0].trim() !== "";
                   const v = getCardVisual(resource);
                   return (
                     <div style={{ height: '180px', background: hasUploaded ? `url(${resource.images[0]}) center/cover no-repeat` : v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -193,7 +193,7 @@ const DiscoverPage = () => {
           {filteredResources.map((resource, i) => (
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} style={{ display: "flex", overflow: "hidden" }}>
-                {(() => { const hasUploaded = resource.images?.[0]?.startsWith("data:"); const v = getCardVisual(resource); return hasUploaded ? <img src={resource.images[0]} alt={resource.name} style={{ width: "180px", height: "140px", objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: "180px", height: "140px", background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={v.icon} style={{ fontSize: '36px', color: 'white' }}></i></div>; })()}
+                {(() => { const hasUploaded = resource.images?.[0] && resource.images[0].trim() !== ""; const v = getCardVisual(resource); return hasUploaded ? <img src={resource.images[0]} alt={resource.name} style={{ width: "180px", height: "140px", objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: "180px", height: "140px", background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={v.icon} style={{ fontSize: '36px', color: 'white' }}></i></div>; })()}
                 <div className="card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
