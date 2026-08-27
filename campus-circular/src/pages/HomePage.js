@@ -56,8 +56,15 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* HERO */}
+      {/* HERO — with bg effects */}
       <section className="hero">
+        <div className="hero-bg-effects" aria-hidden>
+          <div className="hero-orb hero-orb--1"></div>
+          <div className="hero-orb hero-orb--2"></div>
+          <div className="hero-orb hero-orb--3"></div>
+          <div className="hero-grid"></div>
+          <div className="hero-shimmer"></div>
+        </div>
         <div className="hero-inner">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.2, 0, 0, 1] }}>
             <div className="hero-eyebrow">
