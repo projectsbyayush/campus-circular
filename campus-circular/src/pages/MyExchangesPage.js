@@ -33,9 +33,12 @@ const MyExchangesPage = () => {
     return catMap[resource?.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
   };
   const [activeTab, setActiveTab] = useState("all");
+  const [section, setSection] = useState("all"); // all | borrowing | lending
 
-  const myExchanges = allExchanges.filter((e) => e.borrowerId === currentUser.id || e.ownerId === currentUser.id);
-  const filteredExchanges = activeTab === "all" ? myExchanges : myExchanges.filter((e) => e.status.toLowerCase().includes(activeTab.toLowerCase()));
+  const borrowing = allExchanges.filter(e => e.borrowerId === currentUser.id);
+  const lending = allExchanges.filter(e => e.ownerId === currentUser.id);
+  const myExchanges = section === "borrowing" ? borrowing : section === "lending" ? lending : [...borrowing, ...lending];
+  const filteredExchanges = activeTab === "all" ? myExchanges : myExchanges.filter(e => e.status.toLowerCase().includes(activeTab.toLowerCase()));
 
   const tabs = [
     { key: "all", label: "All", icon: "fa-solid fa-layer-group" },
@@ -45,82 +48,115 @@ const MyExchangesPage = () => {
     { key: "returned", label: "Returned", icon: "fa-solid fa-rotate-left" },
   ];
 
+  const renderCard = (exchange, i) => {
+    const resource = allResources.find(r => r.id === exchange.resourceId);
+    const v = getCardVisual(resource);
+    const isBorrower = exchange.borrowerId === currentUser.id;
+    const isOwner = exchange.ownerId === currentUser.id;
+    const lateFee = exchange.status === "Returned" && exchange.returnDate > exchange.endDate ? Math.ceil((new Date(exchange.returnDate) - new Date(exchange.endDate)) / (1000 * 60 * 60 * 24)) * 50 : 0;
+    const canDelete = isOwner; // borrower cannot delete — enforced in AppContext too
+    return (
+      <motion.div key={exchange.id} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} style={{ padding: "16px 18px" }}>
+        <div style={{ display: "flex", gap: "16px", alignItems: "start" }}>
+          <div style={{ width: "96px", height: "96px", borderRadius: "var(--radius-sm)", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: '1px solid var(--border)' }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "6px" }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "2px" }}>{resource?.name}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: 'JetBrains Mono, monospace' }}>
+                  <i className={`fa-solid ${isBorrower ? 'fa-arrow-down' : 'fa-arrow-up'}`} style={{ marginRight: '4px' }}></i>{isBorrower ? "Borrowing" : "Lending"} • #{exchange.id} • <span style={{ color: isBorrower ? "#2563EB" : "#059669" }}>{isBorrower ? "You borrowed" : "You lent"}</span>
+                </div>
+              </div>
+              <span className={`badge ${exchange.status === "Returned" || exchange.status === "Rated" ? "badge-success" : exchange.status === "Borrowed" ? "badge-warning" : exchange.status === "Requested" ? "badge-neutral" : "badge-primary"}`}>{exchange.status}</span>
+            </div>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "10px", fontSize: "12px", color: "var(--text-secondary)", fontFamily: 'JetBrains Mono, monospace' }}>
+              <span><i className="fa-regular fa-calendar"></i> {exchange.startDate} → {exchange.endDate}</span>
+              {exchange.returnDate && <span><i className="fa-solid fa-rotate-left"></i> {exchange.returnDate}</span>}
+            </div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Charge</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.borrowingCharge}</span></div>
+              <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Fee</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.platformFee}</span></div>
+              <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Deposit</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.securityDeposit}</span></div>
+              {lateFee > 0 && <div style={{ padding: "6px 10px", background: "rgba(201,122,107,0.12)", borderRadius: "999px", border: '1px solid rgba(201,122,107,0.2)', fontSize: '11px', color: 'var(--danger)' }}><i className="fa-solid fa-triangle-exclamation"></i> ₹{lateFee}</div>}
+              <div style={{ padding: "6px 10px", background: "var(--primary-soft)", borderRadius: "999px", border: '1px solid rgba(22,163,74,0.18)', fontSize: '11px' }}><span style={{ color: 'var(--primary)', fontWeight: 600 }}>Total ₹{exchange.totalAmount + lateFee}</span></div>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "end" }}>
+            <Link to={`/exchange/${exchange.id}`} className="btn btn-secondary btn-sm" style={{ borderRadius: '999px' }}>
+              <i className="fa-solid fa-eye"></i> Live
+            </Link>
+            {isBorrower && exchange.status === "Requested" && (
+              <button onClick={() => { if(window.confirm("Revoke this request?")) revokeExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-ban"></i> Revoke</button>
+            )}
+            {!isBorrower && exchange.status === "Requested" && (
+              <button onClick={() => { if(window.confirm("Decline this request?")) cancelExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-xmark"></i> Decline</button>
+            )}
+            {canDelete && (exchange.status === "Rated" || exchange.status === "Returned" || exchange.status === "Settlement") && (
+              <button onClick={() => { if(window.confirm("Delete this exchange? Only owner can delete.")) deleteExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, fontSize: 11 }}><i className="fa-regular fa-trash-can"></i> Delete</button>
+            )}
+            {isBorrower && !canDelete && (exchange.status === "Rated" || exchange.status === "Returned") && (
+              <span style={{ fontSize: 10, color: "var(--text-faint)", textAlign: "center" }}><i className="fa-solid fa-lock"></i> Owner controls delete</span>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="page">
       <div className="page-header">
         <h1 className="page-title">My <em>exchanges</em></h1>
-        <p className="page-subtitle">Track every borrowing and lending — from request to settlement.</p>
+        <p className="page-subtitle">Two sections — <b>Borrowing</b> (you borrowed) and <b>Lending</b> (you lent). Borrower can revoke, only owner can delete.</p>
       </div>
 
-      <div className="tabs">
-        {tabs.map((tab) => (
-          <button key={tab.key} className={`tab ${activeTab === tab.key ? "active" : ""}`} onClick={() => setActiveTab(tab.key)}>
-            <i className={tab.icon} style={{ marginRight: '6px', fontSize: '12px' }}></i>{tab.label}
-          </button>
-        ))}
-      </div>
-
-      {filteredExchanges.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon"><i className="fa-solid fa-arrow-right-arrow-left"></i></div>
-          <h3 className="empty-state-title">No exchanges found</h3>
-          <p className="empty-state-text">Start by exploring available resources</p>
-          <Link to="/discover" className="btn btn-primary" style={{ marginTop: "16px" }}>
-            <i className="fa-solid fa-compass"></i> Explore resources
-          </Link>
+      {/* Two sections toggle */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 6, background: "var(--bg-surface)", padding: 4, borderRadius: 999, border: "1px solid var(--border)" }}>
+          {[
+            { k: "all", l: `All (${borrowing.length + lending.length})`, icon: "fa-solid fa-layer-group" },
+            { k: "borrowing", l: `Borrowing (${borrowing.length})`, icon: "fa-solid fa-arrow-down" },
+            { k: "lending", l: `Lending (${lending.length})`, icon: "fa-solid fa-arrow-up" },
+          ].map(s => (
+            <button key={s.k} onClick={() => setSection(s.k)} className={`btn btn-sm ${section===s.k?"btn-primary":"btn-ghost"}`} style={{ borderRadius: 999 }}><i className={s.icon}></i> {s.l}</button>
+          ))}
         </div>
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          {tabs.map((tab) => (
+            <button key={tab.key} className={`tab ${activeTab === tab.key ? "active" : ""}`} onClick={() => setActiveTab(tab.key)}>
+              <i className={tab.icon} style={{ marginRight: '6px', fontSize: '12px' }}></i>{tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* If all, show two separate sections */}
+      {section === "all" ? (
+        <>
+          <div style={{ marginBottom: 18 }}>
+            <h3 style={{ fontFamily: "DM Serif Display, serif", fontSize: 16, marginBottom: 10, display: "flex", gap: 8, alignItems: "center" }}><i className="fa-solid fa-arrow-down" style={{ color: "#2563EB" }}></i> Borrowing <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--text-muted)" }}>— you borrowed ({borrowing.length}) • you can revoke Requested, cannot delete</span></h3>
+            {borrowing.filter(e => activeTab==="all" || e.status.toLowerCase().includes(activeTab.toLowerCase())).length===0 ? <div style={{ padding: 16, background: "var(--bg-card)", borderRadius: "var(--radius)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 13 }}>No borrowing exchanges in this filter.</div> : <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{borrowing.filter(e => activeTab==="all" || e.status.toLowerCase().includes(activeTab.toLowerCase())).map((ex,i)=>renderCard(ex,i))}</div>}
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <h3 style={{ fontFamily: "DM Serif Display, serif", fontSize: 16, marginBottom: 10, display: "flex", gap: 8, alignItems: "center" }}><i className="fa-solid fa-arrow-up" style={{ color: "#059669" }}></i> Lending <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--text-muted)" }}>— you lent ({lending.length}) • you control delete & timeline</span></h3>
+            {lending.filter(e => activeTab==="all" || e.status.toLowerCase().includes(activeTab.toLowerCase())).length===0 ? <div style={{ padding: 16, background: "var(--bg-card)", borderRadius: "var(--radius)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 13 }}>No lending exchanges in this filter.</div> : <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{lending.filter(e => activeTab==="all" || e.status.toLowerCase().includes(activeTab.toLowerCase())).map((ex,i)=>renderCard(ex,i))}</div>}
+          </div>
+        </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {filteredExchanges.map((exchange, i) => {
-            const resource = allResources.find((r) => r.id === exchange.resourceId);
-            const v = getCardVisual(resource);
-            const isBorrower = exchange.borrowerId === currentUser.id;
-            const lateFee = exchange.status === "Returned" && exchange.returnDate > exchange.endDate ? Math.ceil((new Date(exchange.returnDate) - new Date(exchange.endDate)) / (1000 * 60 * 60 * 24)) * 50 : 0;
-            return (
-              <motion.div key={exchange.id} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} style={{ padding: "16px 18px" }}>
-                <div style={{ display: "flex", gap: "16px", alignItems: "start" }}>
-                  <div style={{ width: "96px", height: "96px", borderRadius: "var(--radius-sm)", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: '1px solid var(--border)' }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "6px" }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "2px" }}>{resource?.name}</div>
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: 'JetBrains Mono, monospace' }}>
-                          <i className={`fa-solid ${isBorrower ? 'fa-arrow-down' : 'fa-arrow-up'}`} style={{ marginRight: '4px' }}></i>{isBorrower ? "Borrowing" : "Lending"} • #{exchange.id}
-                        </div>
-                      </div>
-                      <span className={`badge ${exchange.status === "Returned" ? "badge-success" : exchange.status === "Borrowed" ? "badge-warning" : exchange.status === "Requested" ? "badge-neutral" : "badge-primary"}`}>{exchange.status}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: "16px", marginBottom: "10px", fontSize: "12px", color: "var(--text-secondary)", fontFamily: 'JetBrains Mono, monospace' }}>
-                      <span><i className="fa-regular fa-calendar"></i> {exchange.startDate} → {exchange.endDate}</span>
-                      {exchange.returnDate && <span><i className="fa-solid fa-rotate-left"></i> {exchange.returnDate}</span>}
-                    </div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Charge</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.borrowingCharge}</span></div>
-                      <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Fee</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.platformFee}</span></div>
-                      <div style={{ padding: "6px 10px", background: "var(--bg-surface)", borderRadius: "999px", border: '1px solid var(--border)', fontSize: '11px' }}><span style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '9px' }}>Deposit</span> <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.securityDeposit}</span></div>
-                      {lateFee > 0 && <div style={{ padding: "6px 10px", background: "rgba(201,122,107,0.12)", borderRadius: "999px", border: '1px solid rgba(201,122,107,0.2)', fontSize: '11px', color: 'var(--danger)' }}><i className="fa-solid fa-triangle-exclamation"></i> ₹{lateFee}</div>}
-                      <div style={{ padding: "6px 10px", background: "var(--primary-soft)", borderRadius: "999px", border: '1px solid rgba(217,119,87,0.18)', fontSize: '11px' }}><span style={{ color: 'var(--primary)', fontWeight: 600 }}>Total ₹{exchange.totalAmount + lateFee}</span></div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "end" }}>
-                    <Link to={`/exchange/${exchange.id}`} className="btn btn-secondary btn-sm" style={{ borderRadius: '999px' }}>
-                      <i className="fa-solid fa-eye"></i> Live
-                    </Link>
-                    {isBorrower && exchange.status === "Requested" && (
-                      <button onClick={() => { if(window.confirm("Revoke this request?")) revokeExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-ban"></i> Revoke</button>
-                    )}
-                    {!isBorrower && exchange.status === "Requested" && (
-                      <button onClick={() => { if(window.confirm("Decline this request?")) cancelExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-xmark"></i> Decline</button>
-                    )}
-                    {(exchange.status === "Rated" || exchange.status === "Returned") && (
-                      <button onClick={() => { if(window.confirm("Delete this exchange?")) deleteExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, fontSize: 11 }}><i className="fa-regular fa-trash-can"></i> Delete</button>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        filteredExchanges.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon"><i className="fa-solid fa-arrow-right-arrow-left"></i></div>
+            <h3 className="empty-state-title">No exchanges in {section} • {activeTab}</h3>
+            <p className="empty-state-text">Start by exploring available resources</p>
+            <Link to="/discover" className="btn btn-primary" style={{ marginTop: "16px" }}>
+              <i className="fa-solid fa-compass"></i> Explore resources
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {filteredExchanges.map((ex,i)=>renderCard(ex,i))}
+          </div>
+        )
       )}
     </div>
   );

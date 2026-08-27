@@ -153,9 +153,10 @@ export const AppProvider = ({ children }) => {
 
   const addResource = (resource) => {
     const newId = Math.max(0, ...allResources.map(r=>r.id)) + 1;
-    const newResource = { ...resource, id: newId, owner: currentUser.id, createdAt: new Date().toISOString().split("T")[0], isApproved: false, isFlagged: false, isPublic: resource.isPublic !== false, totalBorrows: 0, rating: 0 };
+    // For Ayush ↔ Tejas demo, auto-approve so other user sees instantly; admin can still flag
+    const newResource = { ...resource, id: newId, owner: currentUser.id, createdAt: new Date().toISOString().split("T")[0], isApproved: true, isFlagged: false, isPublic: resource.isPublic !== false, totalBorrows: 0, rating: 0 };
     setAllResources(prev => [...prev, newResource]);
-    setPendingList(prev => [...prev, { id: 100 + prev.length + 1, resource: resource.name, owner: currentUser.id, category: resource.category, status: "Pending", submittedDate: new Date().toISOString().split("T")[0] }]);
+    // No pending needed when auto-approved, but keep for admin log
     // bump owner's shared count in realtime
     setAllUsers(prev => prev.map(u => u.id===currentUser.id ? { ...u, totalShared: (u.totalShared||0)+1 } : u));
   };
@@ -193,7 +194,20 @@ export const AppProvider = ({ children }) => {
     const notif = { id: Date.now()+2, userId: ex.borrowerId, type: "update", exchangeId, message: `Owner declined your request #${exchangeId}`, time: "just now", read: false };
     setAllNotifications(prev => [notif, ...prev]);
   };
-  const deleteExchange = (exchangeId) => setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
+  const deleteExchange = (exchangeId) => {
+    const ex = allExchanges.find(e => e.id === exchangeId);
+    if (!ex) return;
+    // Borrower must NOT delete active borrowing — only owner can delete, and only when completed/returned/rated or revoked
+    const isBorrower = ex.borrowerId === currentUser.id;
+    const isOwner = ex.ownerId === currentUser.id;
+    if (isBorrower && !isOwner) {
+      // borrower can only revoke when Requested/Accepted, not delete Borrowed/ReturnDue etc.
+      if (!["Rated","Returned","Settlement","Inspection"].includes(ex.status)) return;
+      // even then, borrower delete is disallowed — owner controls lifecycle
+      return;
+    }
+    setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
+  };
 
   const nowStamp = () => new Date().toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 

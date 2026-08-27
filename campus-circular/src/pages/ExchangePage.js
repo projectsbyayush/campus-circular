@@ -337,10 +337,15 @@ const ExchangePage = () => {
               <button className="btn btn-ghost btn-block" onClick={() => setShowDisputeModal(true)} style={{ color: 'var(--danger)', borderColor: 'rgba(201,122,107,0.2)' }}>
                 <i className="fa-solid fa-triangle-exclamation"></i> Raise dispute
               </button>
-              {(exchange.status === "Rated" || exchange.status === "Returned") && (
-                <button className="btn btn-ghost btn-block" onClick={() => { if(window.confirm("Delete this exchange record?")) { deleteExchange(exchange.id); navigate("/exchanges"); } }} style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                  <i className="fa-regular fa-trash-can"></i> Delete record
+              {(exchange.status === "Rated" || exchange.status === "Returned" || exchange.status === "Settlement") && isOwner && (
+                <button className="btn btn-ghost btn-block" onClick={() => { if(window.confirm("Delete this exchange record? Only owner can delete.")) { deleteExchange(exchange.id); navigate("/exchanges"); } }} style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  <i className="fa-regular fa-trash-can"></i> Delete record (owner only)
                 </button>
+              )}
+              {(exchange.status === "Rated" || exchange.status === "Returned" || exchange.status === "Settlement") && isBorrower && !isOwner && (
+                <div style={{ padding: "8px 10px", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", fontSize: 11, color: "var(--text-faint)", textAlign: "center" }}>
+                  <i className="fa-solid fa-lock"></i> Only owner can delete • Borrower can revoke when Requested
+                </div>
               )}
             </div>
             <p style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 8, textAlign: "center" }}>Tip: Owner can click the next dot in timeline to progress live.</p>
