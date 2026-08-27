@@ -6,7 +6,6 @@ import {
   Link,
   useLocation,
   useNavigate,
-  Navigate,
 } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppProvider, useApp } from "./context/AppContext";

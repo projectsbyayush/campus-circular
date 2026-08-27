@@ -99,7 +99,8 @@ const DiscoverPage = () => {
       default: result.sort((a, b) => b.rating - a.rating);
     }
     return result;
-  }, [allResources, searchQuery, selectedCategory, sortBy, filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allResources, searchQuery, selectedCategory, sortBy, filters, currentUser.id, locationSearch]);
 
   return (
     <div className="page">

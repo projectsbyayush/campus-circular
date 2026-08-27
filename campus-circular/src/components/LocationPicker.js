@@ -32,6 +32,7 @@ const LocationPicker = ({ value, onChange }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
     mapInstance.current = L.map(mapRef.current, { zoomControl: false }).setView([coords.lat, coords.lng], 16);
@@ -49,11 +50,13 @@ const LocationPicker = ({ value, onChange }) => {
       setCoords({ lat, lng });
       onChange && onChange({ location: label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`, coordinates: { lat, lng } });
     });
-    return () => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  return () => {
       if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (markerRef.current) markerRef.current.setLatLng([coords.lat, coords.lng]);
     if (mapInstance.current) mapInstance.current.setView([coords.lat, coords.lng], 16);

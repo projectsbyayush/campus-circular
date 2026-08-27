@@ -5,7 +5,7 @@ import { useApp } from "../../context/AppContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
-  LineChart, Line, AreaChart, Area
+  AreaChart, Area
 } from "recharts";
 
 const COLORS = ["#16A34A", "#2563EB", "#F59E0B", "#EC4899", "#06B6D4", "#8B5CF6", "#64748B", "#EF4444"];
