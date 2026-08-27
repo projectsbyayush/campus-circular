@@ -67,7 +67,7 @@ const HomePage = () => {
                     <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i>
                     <span style={{ color: 'var(--text)', fontWeight: 700, marginLeft: '4px' }}>4.8/5</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Trusted by 487 students • 892 exchanges</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Trusted by {stats.activeMembers} students • {stats.successfulExchanges} exchanges • Ayush ↔ Tejas</div>
                 </div>
               </div>
               <div style={{ width: '1px', height: '32px', background: 'var(--border)', display: 'block' }} className="hero-divider" />
@@ -98,9 +98,9 @@ const HomePage = () => {
       {/* Trusted bar */}
       <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-card)', padding: '14px 28px' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', gap: '18px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><i className="fa-solid fa-building-columns"></i> Trusted by 487 students • 6 departments</span>
+          <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><i className="fa-solid fa-building-columns"></i> Trusted by {stats.activeMembers} students (Ayush & Tejas) • 2 departments</span>
           <span style={{ display: 'flex', gap: '14px' }}>
-            <span><i className="fa-solid fa-star" style={{ color: 'var(--warning)' }}></i> 4.7 avg trust</span>
+            <span><i className="fa-solid fa-star" style={{ color: 'var(--warning)' }}></i> 4.8 avg trust</span>
             <span><i className="fa-regular fa-clock"></i> 2.3h avg response</span>
             <span><i className="fa-solid fa-rotate-left" style={{ color: 'var(--success)' }}></i> 94% on-time returns</span>
           </span>
@@ -250,12 +250,12 @@ const HomePage = () => {
         {/* Testimonials */}
         <div style={{ marginTop: '36px' }}>
           <h2 style={{ fontFamily: 'DM Serif Display, serif', fontSize: '22px', fontWeight: 400, textAlign: 'center', marginBottom: '6px' }}>Loved by <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>campus</em></h2>
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '18px' }}>Real exchanges, real trust scores.</p>
+          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '18px' }}>Real exchanges, real trust — Ayush ↔ Tejas</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
             {[
-              { name: "Priya Sharma", dept: "Electronics • 4.9 trust", text: "Got the full reel kit in 2 hours — camera, tripod, mic and light. AI understood 'camra for shotting' even with typo!", avatar: allUsers.find(u=>u.name==="Priya Sharma")?.avatar },
-              { name: "Arjun Mehta", dept: "Computer Science • 4.8 trust", text: "Lent my guitar 8 times, earned trust and helped juniors. Settlement is automatic — deposit returned instantly.", avatar: allUsers.find(u=>u.name==="Arjun Mehta")?.avatar },
-              { name: "Sneha Patel", dept: "Commerce • 4.7 trust", text: "Borrowed textbooks for ₹20/day vs ₹1200 to buy. Saved so much, and the condition tracker is super clear.", avatar: allUsers.find(u=>u.name==="Sneha Patel")?.avatar },
+              { name: "Tejas", dept: "Electronics • 4.9 trust", text: "Got the full reel kit in 2 hours — camera, tripod, mic and light. AI understood 'camra for shotting' even with typo!", avatar: allUsers.find(u=>u.name==="Tejas")?.avatar },
+              { name: "Ayush", dept: "Computer Science • 4.8 trust", text: "Lent my guitar 8 times to Tejas, earned trust. Settlement is automatic — deposit returned instantly, realtime update.", avatar: allUsers.find(u=>u.name==="Ayush")?.avatar },
+              { name: "Ayush", dept: "Hostel • 4.8 trust", text: "Borrowed textbook for ₹20/day vs ₹1200 to buy. Pinpoint map made pickup super easy — 0.3km away.", avatar: allUsers.find(u=>u.name==="Ayush")?.avatar },
             ].map((t, i) => (
               <motion.div key={i} className="card" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }} style={{ padding: '18px' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
@@ -273,10 +273,10 @@ const HomePage = () => {
         </div>
 
         {/* Final CTA */}
-        <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ marginTop: '36px', padding: '28px', background: 'linear-gradient(135deg, var(--primary) 0%, #B85C3A 100%)', borderRadius: 'var(--radius)', color: 'white', display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ marginTop: '36px', padding: '28px', background: 'linear-gradient(135deg, var(--primary) 0%, #14532D 100%)', borderRadius: 'var(--radius)', color: 'white', display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div>
             <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: '22px', fontWeight: 400, marginBottom: '6px' }}>Ready to share or borrow?</h3>
-            <p style={{ opacity: 0.9, fontSize: '13px' }}>Join 487 students saving money and carbon — list in 60 seconds or discover nearby resources.</p>
+            <p style={{ opacity: 0.9, fontSize: '13px' }}>Ayush ↔ Tejas • Realtime — list in 60 seconds, request instantly, see it in profile.</p>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <Link to="/list" className="btn" style={{ background: 'white', color: 'var(--primary)', borderRadius: '999px', fontWeight: 600 }}>
