@@ -211,13 +211,21 @@ const AiSearchPage = () => {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:"10px",marginBottom:"12px",marginLeft:"6px"}}>
                   {msg.resources.map(r=>{
                     const v = getCardVisual(r);
+                    const hasUploaded = r.images?.[0]?.startsWith("data:");
                     return (
                     <motion.div key={r.id} className="card" style={{cursor:"pointer",overflow:"hidden"}} whileHover={{y:-2}} onClick={()=>navigate(`/resource/${r.id}`)}>
-                      <div style={{height:"108px", background: v.bg, display:"flex", alignItems:"center", justifyContent:"center", position:'relative'}}>
-                        <i className={v.icon} style={{fontSize:32, color:"white"}}></i>
-                        <span className="badge badge-neutral" style={{position:'absolute',bottom:'7px',left:'7px',background:'rgba(15,14,13,0.84)',color:'white',borderColor:'rgba(255,255,255,0.12)',fontSize:'10px'}}>{r.category}</span>
-                        <span className="badge badge-neutral" style={{position:'absolute',top:'7px',right:'7px',background:'rgba(255,255,255,0.92)',color:'var(--text)', fontSize:'10px'}}><i className={v.icon} style={{fontSize:10}}></i></span>
-                      </div>
+                      {hasUploaded ? (
+                        <div style={{height:"108px", background: `url(${r.images[0]}) center/cover no-repeat`, position:'relative'}}>
+                          <span className="badge badge-neutral" style={{position:'absolute',bottom:'7px',left:'7px',background:'rgba(15,14,13,0.84)',color:'white',borderColor:'rgba(255,255,255,0.12)',fontSize:'10px'}}>{r.category}</span>
+                          <span className="badge" style={{position:'absolute',top:'7px',right:'7px',background:'var(--success)',color:'white', fontSize:'10px'}}><i className="fa-solid fa-image"></i></span>
+                        </div>
+                      ) : (
+                        <div style={{height:"108px", background: v.bg, display:"flex", alignItems:"center", justifyContent:"center", position:'relative'}}>
+                          <i className={v.icon} style={{fontSize:32, color:"white"}}></i>
+                          <span className="badge badge-neutral" style={{position:'absolute',bottom:'7px',left:'7px',background:'rgba(15,14,13,0.84)',color:'white',borderColor:'rgba(255,255,255,0.12)',fontSize:'10px'}}>{r.category}</span>
+                          <span className="badge badge-neutral" style={{position:'absolute',top:'7px',right:'7px',background:'rgba(255,255,255,0.92)',color:'var(--text)', fontSize:'10px'}}><i className={v.icon} style={{fontSize:10}}></i></span>
+                        </div>
+                      )}
                       <div style={{padding:"9px 10px"}}>
                         <div style={{fontWeight:600,fontSize:"12px",lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{r.name}</div>
                         <div style={{display:"flex",justifyContent:"space-between",marginTop:"4px"}}>

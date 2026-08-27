@@ -104,10 +104,11 @@ const ProfilePage = () => {
               <div className="grid grid-2">
                 {userResources.map((r) => {
                   const v = getCardVisual(r);
+                  const hasUploaded = r.images?.[0]?.startsWith("data:");
                   return (
                   <Link to={`/resource/${r.id}`} key={r.id} style={{ textDecoration: "none" }}>
                     <div className="card" style={{ display: "flex", overflow: "hidden" }}>
-                      <div style={{ width: "110px", height: "110px", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>
+                      {hasUploaded ? <img src={r.images[0]} alt={r.name} style={{ width: "110px", height: "110px", objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: "110px", height: "110px", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>}
                       <div style={{ padding: "12px", flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{r.name}</div>
                         <div style={{ display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" }}>

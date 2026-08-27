@@ -117,7 +117,7 @@ const MyListingsPage = () => {
             return (
               <motion.div key={r.id} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} style={{ overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 320px", gap: 0 }}>
-                  <div style={{ background: getCardVisual(r).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}><i className={getCardVisual(r).icon} style={{ fontSize: 48, color: 'white' }}></i></div>
+                  {(() => { const hasUploaded = r.images?.[0]?.startsWith("data:"); const v = getCardVisual(r); return hasUploaded ? <img src={r.images[0]} alt={r.name} style={{ width: "180px", minHeight: 180, objectFit: "cover" }} /> : <div style={{ background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}><i className={v.icon} style={{ fontSize: 48, color: 'white' }}></i></div>; })()}
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <span className="badge badge-neutral">{r.category}</span>

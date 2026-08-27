@@ -9,9 +9,35 @@ const ListResourcePage = () => {
   const navigate = useNavigate();
   const { addResource } = useApp();
   const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" });
+  const [imagePreview, setImagePreview] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image too large. Max 2MB for demo storage.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result;
+      setImagePreview(dataUrl);
+      setForm(prev => ({ ...prev, images: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImagePreview("");
+    setForm(prev => ({ ...prev, images: "" }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -101,8 +127,23 @@ const ListResourcePage = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Image URL</label>
-              <input type="url" name="images" className="form-input" placeholder="https://..." value={form.images} onChange={handleChange} />
+              <label className="form-label"><i className="fa-solid fa-image" style={{ marginRight: 6 }}></i>Item photo — upload or paste URL</label>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                <label className="btn btn-secondary btn-sm" style={{ borderRadius: 999, cursor: "pointer", border: "1px solid var(--border)" }}>
+                  <i className="fa-solid fa-upload"></i> Upload image
+                  <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                </label>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>or paste URL below • Max 2MB • Stored locally for demo</span>
+                {imagePreview && <button type="button" className="btn btn-ghost btn-sm" onClick={clearImage} style={{ color: "var(--danger)", fontSize: 11 }}><i className="fa-solid fa-xmark"></i> Clear</button>}
+              </div>
+              {(imagePreview || form.images) && (
+                <div style={{ marginBottom: 10, borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", height: 160, background: "var(--bg-surface)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                  <img src={imagePreview || form.images} alt="Preview" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} onError={(e) => e.target.style.display = 'none'} />
+                  <span style={{ position: "absolute", top: 8, left: 8, background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 8px", fontSize: 11, display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-eye" style={{ color: "var(--success)" }}></i> Preview</span>
+                </div>
+              )}
+              <input type="url" name="images" className="form-input" placeholder="https://...  (or upload above — upload takes priority)" value={form.images.startsWith("data:") ? "" : form.images} onChange={(e) => { setImagePreview(""); setForm({ ...form, images: e.target.value }); }} />
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}><i className="fa-solid fa-circle-info"></i> Upload is stored as data URL in browser (frontend-only demo). If no photo, card shows a Font Awesome category icon.</p>
             </div>
           </div>
 
@@ -130,7 +171,7 @@ const ListResourcePage = () => {
 
           <div style={{ marginTop: "18px", display: "flex", gap: "10px" }}>
             <button type="button" className="btn btn-ghost" onClick={() => navigate(-1)}><i className="fa-solid fa-arrow-left"></i> Cancel</button>
-            <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }}><i className="fa-solid fa-box-open"></i> List resource</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '10px 18px', fontSize: '13px' }}><i className="fa-solid fa-box-open"></i> List resource</button>
           </div>
         </form>
       </div>

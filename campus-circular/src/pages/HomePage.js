@@ -71,14 +71,14 @@ const HomePage = () => {
             <p className="hero-subtitle">
               A trusted circular economy for your campus. Borrow calculators, cameras, laptops & more — or earn by sharing what you own.
             </p>
-            <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-              <Link to="/discover" className="btn btn-primary" style={{ padding: '15px 28px', fontSize: '15px', borderRadius: '999px', fontWeight: 600 }}>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+              <Link to="/discover" className="btn btn-primary" style={{ padding: '11px 20px', fontSize: '13px', borderRadius: '999px', fontWeight: 600 }}>
                 <i className="fa-solid fa-compass"></i> Explore Resources
               </Link>
-              <Link to="/ai-search" className="btn btn-secondary" style={{ padding: '15px 26px', fontSize: '15px', borderRadius: '999px', fontWeight: 600 }}>
+              <Link to="/ai-search" className="btn btn-secondary" style={{ padding: '11px 18px', fontSize: '13px', borderRadius: '999px', fontWeight: 600 }}>
                 <i className="fa-solid fa-wand-magic-sparkles"></i> Ask AI
               </Link>
-              <Link to="/list" className="btn btn-ghost" style={{ padding: '15px 22px', fontSize: '14px', borderRadius: '999px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+              <Link to="/list" className="btn btn-ghost" style={{ padding: '10px 16px', fontSize: '13px', borderRadius: '999px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
                 <i className="fa-solid fa-plus"></i> List an Item
               </Link>
             </div>
@@ -194,26 +194,36 @@ const HomePage = () => {
                 whileHover={{ y: -4 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div style={{ height: '180px', background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <i className={getCardVisual(resource).icon} style={{ fontSize: '56px', color: 'white', opacity: 0.92, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}></i>
-                  <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
-                  <div style={{ position: "absolute", bottom: "10px", left: "10px", right: '10px', display: "flex", gap: "6px", justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <span className="badge badge-neutral" style={{ backdropFilter: 'blur(8px)', background: 'rgba(28,28,26,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
-                      <span className="badge badge-primary">{resource.condition}</span>
-                      {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
+                {(() => {
+                  const hasUploaded = resource.images?.[0]?.startsWith("data:");
+                  const v = getCardVisual(resource);
+                  return (
+                    <div style={{ height: '180px', background: hasUploaded ? `url(${resource.images[0]}) center/cover no-repeat` : v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                      {!hasUploaded && <i className={v.icon} style={{ fontSize: '56px', color: 'white', opacity: 0.92, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}></i>}
+                      {hasUploaded && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)' }} />}
+                      <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
+                      <div style={{ position: "absolute", bottom: "10px", left: "10px", right: '10px', display: "flex", gap: "6px", justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <span className="badge badge-neutral" style={{ backdropFilter: 'blur(8px)', background: 'rgba(28,28,26,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
+                          <span className="badge badge-primary">{resource.condition}</span>
+                          {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
+                          {hasUploaded && <span className="badge" style={{ background: 'var(--success)', color: 'white' }}><i className="fa-solid fa-image"></i> Photo</span>}
+                        </div>
+                        <span style={{ fontSize: '11px', color: 'white', background: 'rgba(0,0,0,0.38)', padding: '4px 8px', borderRadius: '999px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                          <i className="fa-solid fa-location-dot"></i> {resource.distance}
+                        </span>
+                      </div>
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '999px', padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'flex', gap: '4px', alignItems: 'center', color: 'var(--warning)' }}>
+                        <i className="fa-solid fa-star" style={{ fontSize: '10px' }}></i> {resource.rating}
+                      </div>
+                      {!hasUploaded && (
+                        <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '11px' }}>
+                          <i className={v.icon}></i>
+                        </div>
+                      )}
                     </div>
-                    <span style={{ fontSize: '11px', color: 'white', background: 'rgba(0,0,0,0.38)', padding: '4px 8px', borderRadius: '999px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                      <i className="fa-solid fa-location-dot"></i> {resource.distance}
-                    </span>
-                  </div>
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '999px', padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'flex', gap: '4px', alignItems: 'center', color: 'var(--warning)' }}>
-                    <i className="fa-solid fa-star" style={{ fontSize: '10px' }}></i> {resource.rating}
-                  </div>
-                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '11px' }}>
-                    <i className={getCardVisual(resource).icon}></i>
-                  </div>
-                </div>
+                  );
+                })()}
                 <div className="card-body" style={{ padding: '14px 14px 12px' }}>
                   <div className="card-title" style={{ fontSize: '14px', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{resource.name}</div>
                   <div className="card-text" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '10px', minHeight: '36px' }}>{resource.description}</div>

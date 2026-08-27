@@ -153,16 +153,24 @@ const DiscoverPage = () => {
           {filteredResources.map((resource, i) => (
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card resource-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <div style={{ height: '180px', background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <i className={getCardVisual(resource).icon} style={{ fontSize: '52px', color: 'white', opacity: 0.92 }}></i>
-                  <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
-                  <div style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "6px" }}>
-                    <span className="badge badge-neutral" style={{ background: 'rgba(28,28,26,0.85)', backdropFilter: 'blur(8px)' }}>{resource.category}</span>
-                    <span className="badge badge-primary">{resource.condition}</span>
-                    {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
-                  </div>
-                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '12px' }}><i className={getCardVisual(resource).icon}></i></div>
-                </div>
+                {(() => {
+                  const hasUploaded = resource.images?.[0]?.startsWith("data:");
+                  const v = getCardVisual(resource);
+                  return (
+                    <div style={{ height: '180px', background: hasUploaded ? `url(${resource.images[0]}) center/cover no-repeat` : v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                      {!hasUploaded && <i className={v.icon} style={{ fontSize: '52px', color: 'white', opacity: 0.92 }}></i>}
+                      {hasUploaded && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent 60%)' }} />}
+                      <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
+                      <div style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "6px" }}>
+                        <span className="badge badge-neutral" style={{ background: 'rgba(28,28,26,0.85)', backdropFilter: 'blur(8px)' }}>{resource.category}</span>
+                        <span className="badge badge-primary">{resource.condition}</span>
+                        {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
+                        {hasUploaded && <span className="badge" style={{ background: 'var(--success)', color: 'white' }}><i className="fa-solid fa-image"></i></span>}
+                      </div>
+                      {!hasUploaded && <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '12px' }}><i className={v.icon}></i></div>}
+                    </div>
+                  );
+                })()}
                 <div className="card-body">
                   <div className="card-title">{resource.name}</div>
                   <div className="card-text" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{resource.description}</div>
@@ -185,7 +193,7 @@ const DiscoverPage = () => {
           {filteredResources.map((resource, i) => (
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} style={{ display: "flex", overflow: "hidden" }}>
-                <div style={{ width: "180px", height: "140px", background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={getCardVisual(resource).icon} style={{ fontSize: '36px', color: 'white' }}></i></div>
+                {(() => { const hasUploaded = resource.images?.[0]?.startsWith("data:"); const v = getCardVisual(resource); return hasUploaded ? <img src={resource.images[0]} alt={resource.name} style={{ width: "180px", height: "140px", objectFit: "cover", flexShrink: 0 }} /> : <div style={{ width: "180px", height: "140px", background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={v.icon} style={{ fontSize: '36px', color: 'white' }}></i></div>; })()}
                 <div className="card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>

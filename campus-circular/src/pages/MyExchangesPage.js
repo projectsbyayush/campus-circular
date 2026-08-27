@@ -58,7 +58,7 @@ const MyExchangesPage = () => {
     return (
       <motion.div key={exchange.id} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} style={{ padding: "16px 18px" }}>
         <div style={{ display: "flex", gap: "16px", alignItems: "start" }}>
-          <div style={{ width: "96px", height: "96px", borderRadius: "var(--radius-sm)", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: '1px solid var(--border)' }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>
+          {resource?.images?.[0]?.startsWith("data:") ? <img src={resource.images[0]} alt={resource.name} style={{ width: "96px", height: "96px", borderRadius: "var(--radius-sm)", objectFit: "cover", flexShrink: 0, border: '1px solid var(--border)' }} /> : <div style={{ width: "96px", height: "96px", borderRadius: "var(--radius-sm)", background: v.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: '1px solid var(--border)' }}><i className={v.icon} style={{ fontSize: 28, color: "white" }}></i></div>}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "6px" }}>
               <div>
