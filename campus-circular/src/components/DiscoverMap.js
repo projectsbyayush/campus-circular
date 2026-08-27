@@ -9,7 +9,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-const DiscoverMap = ({ resources, onSelect }) => {
+const DiscoverMap = ({ resources, onSelect, center }) => {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
 
@@ -42,6 +42,14 @@ const DiscoverMap = ({ resources, onSelect }) => {
       marker.on("click", () => onSelect && onSelect(r.id));
       group.push([r.coordinates.lat, r.coordinates.lng]);
     });
+    // searched center marker if any
+    if (center) {
+      L.marker([center.lat, center.lng], {
+        icon: L.divIcon({ html: '<div style="background:#16A34A;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"><i class="fa-solid fa-location-dot" style="font-size:12px"></i></div>', className: "", iconSize: [26,26] })
+      }).addTo(mapInstance.current).bindPopup("<b>Searched location</b>").openPopup();
+      mapInstance.current.setView([center.lat, center.lng], 16);
+      return;
+    }
     // campus center marker
     L.marker([28.5445, 77.1925], {
       icon: L.divIcon({ html: '<div style="background:#2563EB;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"><i class="fa-solid fa-crosshairs" style="font-size:10px"></i></div>', className: "", iconSize: [22,22] })
@@ -51,7 +59,7 @@ const DiscoverMap = ({ resources, onSelect }) => {
       bounds.extend([28.5445, 77.1925]);
       mapInstance.current.fitBounds(bounds.pad(0.2));
     }
-  }, [resources, onSelect]);
+  }, [resources, onSelect, center]);
 
   if (!resources.length) {
     return <div style={{ height: 400, background: "var(--bg-surface)", borderRadius: "var(--radius)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>No resources to show on map</div>;

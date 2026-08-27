@@ -28,6 +28,9 @@ const LocationPicker = ({ value, onChange }) => {
   const markerRef = useRef(null);
   const [coords, setCoords] = useState(value?.coordinates || CAMPUS_CENTER);
   const [label, setLabel] = useState(value?.location || "");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -68,8 +71,69 @@ const LocationPicker = ({ value, onChange }) => {
     onChange && onChange({ location: newLabel, coordinates: coords });
   };
 
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    // First try preset match
+    const preset = CAMPUS_PRESETS.find(p => p.label.toLowerCase().includes(q.toLowerCase()));
+    if (preset) {
+      handlePreset(preset);
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&countrycodes=in`);
+      const data = await res.json();
+      if (data.length) {
+        setSearchResults(data);
+      } else {
+        setSearchResults([]);
+        alert("No results found. Try 'Hostel', 'Library', or drag pin.");
+      }
+    } catch {
+      alert("Search failed. Check internet or try preset.");
+    }
+    setIsSearching(false);
+  };
+
+  const selectSearchResult = (item) => {
+    const lat = parseFloat(item.lat), lng = parseFloat(item.lon);
+    const newLabel = item.display_name.split(",").slice(0,2).join(", ");
+    setCoords({ lat, lng });
+    setLabel(newLabel);
+    onChange && onChange({ location: newLabel, coordinates: { lat, lng } });
+    setSearchResults([]);
+    setSearchQuery("");
+  };
+
   return (
     <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <div style={{ flex: 1, position: "relative", display: "flex", gap: 6 }}>
+          <input
+            className="form-input"
+            placeholder="Search location — e.g., Hostel, Library, or address"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleSearch())}
+            style={{ flex: 1 }}
+          />
+          <button type="button" onClick={handleSearch} disabled={isSearching} className="btn btn-primary btn-sm" style={{ borderRadius: 999, whiteSpace: "nowrap" }}>
+            {isSearching ? <><i className="fa-solid fa-spinner fa-spin"></i> Searching</> : <><i className="fa-solid fa-magnifying-glass"></i> Search</>}
+          </button>
+        </div>
+      </div>
+      {searchResults.length > 0 && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, marginBottom: 8, overflow: "hidden" }}>
+          {searchResults.map((item, idx) => (
+            <button key={idx} type="button" onClick={() => selectSearchResult(item)} style={{ width: "100%", textAlign: "left", padding: "8px 10px", background: "none", border: "none", borderBottom: idx < searchResults.length-1 ? "1px solid var(--border)" : "none", fontSize: 12, color: "var(--text)", cursor: "pointer", display: "flex", gap: 8 }}>
+              <i className="fa-solid fa-location-dot" style={{ color: "var(--primary)", marginTop: 2 }}></i>
+              <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.display_name}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
         {CAMPUS_PRESETS.slice(0, 6).map(p => (
           <button key={p.label} type="button" onClick={() => handlePreset(p)} className="btn btn-secondary btn-sm" style={{ borderRadius: "999px", fontSize: 11 }}>
@@ -88,7 +152,7 @@ const LocationPicker = ({ value, onChange }) => {
           <span style={{ color: "var(--text-muted)" }}>• click or drag pin to pinpoint</span>
         </div>
       </div>
-      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}><i className="fa-solid fa-circle-info"></i> Pinpoint shown on resource card & detail map. Distance auto-calculated from campus center.</p>
+      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}><i className="fa-solid fa-circle-info"></i> Search above or click preset/drag pin. Pinpoint shown on card & detail map.</p>
     </div>
   );
 };

@@ -48,12 +48,43 @@ const DiscoverPage = () => {
     return catMap[resource.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
   };
   const [view, setView] = useState("grid");
+  const [locationSearch, setLocationSearch] = useState("");
+  const [mapCenter, setMapCenter] = useState(null);
+  const [isLocSearching, setIsLocSearching] = useState(false);
+
+  const handleLocationSearch = async () => {
+    const q = locationSearch.trim();
+    if (!q) return;
+    // First try local location string match
+    const preset = allResources.find(r => r.location.toLowerCase().includes(q.toLowerCase()));
+    if (preset?.coordinates) {
+      setMapCenter(preset.coordinates);
+      return;
+    }
+    setIsLocSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=in`);
+      const data = await res.json();
+      if (data[0]) {
+        setMapCenter({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+      } else {
+        alert("No location found. Try Hostel, Library, or drag map.");
+      }
+    } catch { alert("Location search failed."); }
+    setIsLocSearching(false);
+  };
 
   const filteredResources = useMemo(() => {
     let result = allResources.filter((r) => r.isApproved && (r.isPublic !== false || r.owner === currentUser.id));
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
+      result = result.filter((r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.location.toLowerCase().includes(q));
+    }
+    if (locationSearch) {
+      const lq = locationSearch.toLowerCase();
+      // also filter by location string when map search active
+      const locFiltered = result.filter(r => r.location.toLowerCase().includes(lq));
+      if (locFiltered.length) result = locFiltered;
     }
     if (selectedCategory !== "All") result = result.filter((r) => r.category === selectedCategory);
     if (filters.availability !== "All") result = result.filter((r) => r.availability === filters.availability);
@@ -140,6 +171,25 @@ const DiscoverPage = () => {
         </div>
       </div>
 
+      {view === "map" && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ flex: 1, position: "relative", display: "flex", gap: 6 }}>
+            <input
+              className="form-input"
+              placeholder="Search map location — e.g., Hostel, Library, Sports Complex or address"
+              value={locationSearch}
+              onChange={e => setLocationSearch(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleLocationSearch())}
+              style={{ flex: 1 }}
+            />
+            <button type="button" onClick={handleLocationSearch} disabled={isLocSearching} className="btn btn-primary btn-sm" style={{ borderRadius: 999, whiteSpace: "nowrap" }}>
+              {isLocSearching ? <><i className="fa-solid fa-spinner fa-spin"></i> Searching</> : <><i className="fa-solid fa-magnifying-glass"></i> Search map</>}
+            </button>
+            {locationSearch && <button type="button" onClick={() => { setLocationSearch(""); setMapCenter(null); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999 }}><i className="fa-solid fa-xmark"></i> Clear</button>}
+          </div>
+        </div>
+      )}
+
       {filteredResources.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon"><i className="fa-solid fa-magnifying-glass"></i></div>
@@ -147,7 +197,7 @@ const DiscoverPage = () => {
           <p className="empty-state-text">Try adjusting your filters or search terms</p>
         </div>
       ) : view === "map" ? (
-        <DiscoverMap resources={filteredResources} onSelect={(id) => navigate(`/resource/${id}`)} />
+        <DiscoverMap resources={filteredResources} center={mapCenter} onSelect={(id) => navigate(`/resource/${id}`)} />
       ) : view === "grid" ? (
         <div className="grid grid-3">
           {filteredResources.map((resource, i) => (
