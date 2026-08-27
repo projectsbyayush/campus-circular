@@ -130,6 +130,61 @@ const ExchangePage = () => {
         </div>
       </div>
 
+      {/* Timeline details • Due as per owner • Time left • Completed */}
+      <div className="card" style={{ padding: "16px", marginBottom: "16px" }}>
+        {(() => {
+          const end = new Date(exchange.endDate);
+          const now = new Date();
+          const diff = end - now;
+          const isCompleted = exchange.status === "Rated";
+          let timeLeft = null;
+          if (isCompleted) timeLeft = { text: "Completed", sub: `Completed on ${exchange.timeline?.find(t=>t.status==="Rated")?.at || exchange.returnDate || end.toLocaleDateString()}`, color: "var(--success)", bg: "rgba(22,163,74,0.10)", border: "rgba(22,163,74,0.18)", icon: "fa-circle-check" };
+          else if (diff <= 0) {
+            const overdue = Math.ceil(Math.abs(diff)/(1000*60*60*24));
+            timeLeft = { text: `Overdue by ${overdue} day${overdue>1?"s":""}`, sub: `Due was ${exchange.endDate} • owner set ${exchange.totalDays} day${exchange.totalDays>1?"s":""}`, color: "var(--danger)", bg: "rgba(220,38,38,0.08)", border: "rgba(220,38,38,0.18)", icon: "fa-triangle-exclamation" };
+          } else {
+            const days = Math.floor(diff/(1000*60*60*24));
+            const hours = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+            timeLeft = { text: days>0 ? `Due in ${days}d ${hours}h` : `Due in ${hours}h`, sub: `Due ${exchange.endDate} • ${exchange.totalDays} day${exchange.totalDays>1?"s":""} as per owner accepted • ${exchange.startDate} → ${exchange.endDate}`, color: "var(--warning)", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.18)", icon: "fa-clock" };
+          }
+          return (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+                <h3 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-clock" style={{ color: timeLeft.color }}></i> Timeline • Due as per owner</h3>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ background: timeLeft.bg, border: `1px solid ${timeLeft.border}`, color: timeLeft.color, padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, display: "flex", gap: 6, alignItems: "center" }}><i className={`fa-solid ${timeLeft.icon}`}></i> {timeLeft.text}</span>
+                  {isCompleted && <span className="badge badge-success" style={{ fontSize: 11 }}><i className="fa-solid fa-check"></i> Completed</span>}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12, fontFamily: "JetBrains Mono, monospace" }}>{timeLeft.sub}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(exchange.timeline || []).map((t,i) => {
+                  const user = allUsers.find(u=>u.id===t.by);
+                  const isLast = i === exchange.timeline.length-1;
+                  const isAccept = t.status === "Accepted";
+                  return (
+                    <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 10px", background: isLast ? "var(--primary-soft)" : "var(--bg-surface)", border: `1px solid ${isLast ? "rgba(22,163,74,0.18)" : "var(--border)"}`, borderRadius: 10 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: isAccept ? "var(--success)" : isLast ? "var(--primary)" : "var(--bg-card)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: isAccept||isLast ? "white" : "var(--text-muted)", fontSize: 11 }}><i className={isAccept ? "fa-solid fa-check" : "fa-solid fa-circle"} style={{ fontSize: 8 }}></i></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
+                          {t.status}
+                          {isAccept && <span className="badge badge-success" style={{ fontSize: 10 }}><i className="fa-solid fa-check"></i> Accept</span>}
+                          {t.status==="Rated" && <span className="badge badge-success" style={{ fontSize: 10 }}>Completed</span>}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t.at} • by {user?.name || "—"} {user?.id===currentUser.id && "(you)"} {t.status==="Accepted" ? "• owner accepted" : t.status==="Requested" ? "• borrower requested" : ""}</div>
+                      </div>
+                      {isLast && <span style={{ fontSize: 10, color: "var(--primary)", fontWeight: 700, letterSpacing: "0.06em" }}>LIVE</span>}
+                    </div>
+                  );
+                })}
+                {!exchange.timeline && <div style={{ fontSize: 12, color: "var(--text-muted)", padding: 10, background: "var(--bg-surface)", borderRadius: 8, border: "1px dashed var(--border)" }}>No timeline yet — it will populate live as owner/borrower progress via clicks.</div>}
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 8, textAlign: "center" }}>Owner set due: {exchange.startDate} → <b style={{ color: "var(--text)" }}>{exchange.endDate}</b> ({exchange.totalDays} days) • Click next dot above to progress live — both see it instantly.</p>
+            </>
+          );
+        })()}
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 0.95fr", gap: "20px" }}>
         <div>
           <div className="card" style={{ padding: "18px", marginBottom: "14px" }}>

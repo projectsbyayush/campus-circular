@@ -37,7 +37,12 @@ export const AppProvider = ({ children }) => {
     if (loaded !== patched) save("cc_resources", patched);
     return patched;
   });
-  const [allExchanges, setAllExchanges] = useState(() => load("cc_exchanges", seedExchanges));
+  const [allExchanges, setAllExchanges] = useState(() => {
+    const loaded = load("cc_exchanges", seedExchanges);
+    const patched = loaded.map(e => e.timeline ? e : { ...e, timeline: [{ status: e.status, at: e.startDate || new Date().toLocaleDateString(), by: e.borrowerId }] });
+    if (patched.some((e,i)=>!loaded[i]?.timeline)) save("cc_exchanges", patched);
+    return patched;
+  });
   const [allDisputes, setAllDisputes] = useState(() => load("cc_disputes", seedDisputes));
   const [allNotifications, setAllNotifications] = useState(() => load("cc_notifications", seedNotifications));
   const [pendingList, setPendingList] = useState(() => load("cc_pending", seedPending));
@@ -190,43 +195,49 @@ export const AppProvider = ({ children }) => {
   };
   const deleteExchange = (exchangeId) => setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
 
+  const nowStamp = () => new Date().toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
   const initiateExchange = (resourceId, duration, startDate) => {
     const resource = allResources.find((r) => r.id === resourceId);
     if (!resource) return null;
-    if (resource.owner === currentUser.id) return null; // cannot borrow own
+    if (resource.owner === currentUser.id) return null;
     const days = Math.ceil(duration / 24) || 1;
     const borrowingCharge = resource.dailyRate * days;
     const platformFee = Math.round(borrowingCharge * (resource.platformFeePercent / 100));
     const totalAmount = borrowingCharge + platformFee + resource.securityDeposit;
     const newId = Math.max(0, ...allExchanges.map(e=>e.id)) + 1;
+    const start = startDate || new Date().toISOString().split("T")[0];
+    const end = new Date(Date.now() + duration * 60 * 60 * 1000).toISOString().split("T")[0];
     const newExchange = {
       id: newId, resourceId, borrowerId: currentUser.id, ownerId: resource.owner, status: "Requested",
-      startDate: startDate || new Date().toISOString().split("T")[0], endDate: new Date(Date.now() + duration * 60 * 60 * 1000).toISOString().split("T")[0],
+      startDate: start, endDate: end,
       returnDate: null, hourlyRate: resource.hourlyRate, dailyRate: resource.dailyRate, totalDays: days, borrowingCharge, platformFee, securityDeposit: resource.securityDeposit, totalAmount, lateFee: 0, damageDeduction: 0, conditionBefore: resource.conditionBefore, conditionAfter: null, agreement: false, dispute: null,
+      timeline: [{ status: "Requested", at: nowStamp(), by: currentUser.id }],
     };
     setAllExchanges(prev => [...prev, newExchange]);
     setActiveExchanges(prev => [...prev, newExchange.id]);
-    // realtime notification to owner with pinpoint
     const owner = allUsers.find(u=>u.id===resource.owner);
     const borrower = currentUser;
-    const notif = { id: Date.now(), userId: owner.id, type: "request", exchangeId: newId, resourceId, message: `${borrower.name} requested "${resource.name}"`, time: "just now", read: false };
+    const notif = { id: Date.now(), userId: owner.id, type: "request", exchangeId: newId, resourceId, message: `${borrower.name} requested "${resource.name}" — due ${end} (owner set)`, time: "just now", read: false };
     setAllNotifications(prev => [notif, ...prev]);
-    // update borrower's profile stats instantly
-    setAllUsers(prev => prev.map(u => {
-      if (u.id === borrower.id) return { ...u, successfulExchanges: (u.successfulExchanges||0)+0 };
-      return u;
-    }));
     return newExchange;
   };
 
-  const confirmAgreement = (exchangeId) => setAllExchanges(prev => prev.map((e) => e.id === exchangeId ? { ...e, agreement: true, status: "Accepted" } : e));
+  const confirmAgreement = (exchangeId) => setAllExchanges(prev => prev.map((e) => {
+    if (e.id !== exchangeId) return e;
+    const tl = [...(e.timeline||[]), { status: "Accepted", at: nowStamp(), by: currentUser.id }];
+    return { ...e, agreement: true, status: "Accepted", timeline: tl };
+  }));
   const updateExchangeStatus = (exchangeId, status) => {
-    setAllExchanges(prev => prev.map((e) => e.id === exchangeId ? { ...e, status, returnDate: status === "Returned" ? new Date().toISOString().split("T")[0] : e.returnDate } : e));
-    // notify other party with pinpoint
+    setAllExchanges(prev => prev.map((e) => {
+      if (e.id !== exchangeId) return e;
+      const tl = [...(e.timeline||[]), { status, at: nowStamp(), by: currentUser.id }];
+      return { ...e, status, returnDate: status === "Returned" ? new Date().toISOString().split("T")[0] : e.returnDate, timeline: tl };
+    }));
     const ex = allExchanges.find(e=>e.id===exchangeId);
     if (ex) {
       const otherId = currentUser.id === ex.borrowerId ? ex.ownerId : ex.borrowerId;
-      const notif = { id: Date.now()+1, userId: otherId, type: "update", exchangeId, message: `Exchange #${exchangeId} is now ${status}`, time: "just now", read: false };
+      const notif = { id: Date.now()+1, userId: otherId, type: "update", exchangeId, message: `Exchange #${exchangeId} is now ${status}${status==="Rated"?" — Completed":""} • due ${ex.endDate}`, time: "just now", read: false };
       setAllNotifications(prev => [notif, ...prev]);
     }
   };
