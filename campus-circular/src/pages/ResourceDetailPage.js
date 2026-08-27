@@ -15,6 +15,7 @@ const ResourceDetailPage = () => {
   if (!resource) return <div className="page"><div className="empty-state"><div className="empty-icon"><i className="fa-solid fa-box-open"></i></div><h3>Resource not found</h3></div></div>;
 
   const owner = allUsers.find((u) => u.id === resource.owner);
+  const isOwner = resource.owner === currentUser.id;
   const days = Math.ceil(duration / 24) || 1;
   const borrowingCharge = resource.dailyRate * days;
   const platformFee = Math.round(borrowingCharge * (resource.platformFeePercent / 100));
@@ -126,7 +127,21 @@ const ResourceDetailPage = () => {
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>Deposit refundable on safe return</div>
               </div>
 
-              {resource.availability === "Available" ? (
+              {isOwner ? (
+                <div style={{ background: "var(--primary-soft)", border: "1px solid rgba(22,163,74,0.18)", borderRadius: "var(--radius-sm)", padding: "14px", textAlign: "center" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--primary)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: 14 }}><i className="fa-solid fa-crown"></i></div>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>It's yours — your listing</div>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>You can't borrow your own item. Manage it from My Listings.</p>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate("/my-listings")} style={{ borderRadius: 999 }}><i className="fa-solid fa-box"></i> My listings</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate("/profile")} style={{ borderRadius: 999 }}><i className="fa-regular fa-user"></i> Profile</button>
+                  </div>
+                  <div style={{ marginTop: 10, display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                    <span className={`badge ${resource.isPublic===false ? "badge-danger" : "badge-success"}`}><i className={`fa-solid ${resource.isPublic===false ? "fa-eye-slash" : "fa-eye"}`}></i> {resource.isPublic===false ? "Private" : "Public"}</span>
+                    <span className={`badge ${resource.availability==="Available" ? "badge-success" : "badge-warning"}`}>{resource.availability}</span>
+                  </div>
+                </div>
+              ) : resource.availability === "Available" ? (
                 <button className="btn btn-primary btn-block btn-lg" onClick={() => setShowBorrowModal(true)}>
                   <i className="fa-solid fa-handshake"></i> Request to borrow
                 </button>
@@ -135,9 +150,11 @@ const ResourceDetailPage = () => {
                   <i className="fa-solid fa-ban"></i> Currently unavailable
                 </button>
               )}
-              <p style={{ fontSize: '11px', color: 'var(--text-faint)', textAlign: 'center', marginTop: '10px' }}>
-                <i className="fa-solid fa-shield-halved"></i> Protected by review & deposit
-              </p>
+              {!isOwner && (
+                <p style={{ fontSize: '11px', color: 'var(--text-faint)', textAlign: 'center', marginTop: '10px' }}>
+                  <i className="fa-solid fa-shield-halved"></i> Protected by review & deposit
+                </p>
+              )}
             </div>
 
             <div className="card" style={{ padding: "18px" }}>

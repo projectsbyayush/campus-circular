@@ -171,6 +171,7 @@ const HomePage = () => {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <span className="badge badge-neutral" style={{ backdropFilter: 'blur(8px)', background: 'rgba(28,28,26,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
                       <span className="badge badge-primary">{resource.condition}</span>
+                      {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
                     </div>
                     <span style={{ fontSize: '11px', color: 'white', background: 'rgba(0,0,0,0.45)', padding: '4px 8px', borderRadius: '999px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}>
                       <i className="fa-solid fa-location-dot"></i> {resource.distance}

@@ -132,6 +132,7 @@ const DiscoverPage = () => {
                   <div style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "6px" }}>
                     <span className="badge badge-neutral" style={{ background: 'rgba(28,28,26,0.85)', backdropFilter: 'blur(8px)' }}>{resource.category}</span>
                     <span className="badge badge-primary">{resource.condition}</span>
+                    {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
                   </div>
                 </div>
                 <div className="card-body">
