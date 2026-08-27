@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 
 const MyExchangesPage = () => {
-  const { allExchanges, allResources, currentUser } = useApp();
+  const { allExchanges, allResources, currentUser, revokeExchange, cancelExchange, deleteExchange } = useApp();
   const [activeTab, setActiveTab] = useState("all");
 
   const myExchanges = allExchanges.filter((e) => e.borrowerId === currentUser.id || e.ownerId === currentUser.id);
@@ -74,9 +74,20 @@ const MyExchangesPage = () => {
                       <div style={{ padding: "6px 10px", background: "var(--primary-soft)", borderRadius: "999px", border: '1px solid rgba(217,119,87,0.18)', fontSize: '11px' }}><span style={{ color: 'var(--primary)', fontWeight: 600 }}>Total ₹{exchange.totalAmount + lateFee}</span></div>
                     </div>
                   </div>
-                  <Link to={`/exchange/${exchange.id}`} className="btn btn-secondary btn-sm" style={{ borderRadius: '999px' }}>
-                    <i className="fa-solid fa-arrow-right"></i>
-                  </Link>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "end" }}>
+                    <Link to={`/exchange/${exchange.id}`} className="btn btn-secondary btn-sm" style={{ borderRadius: '999px' }}>
+                      <i className="fa-solid fa-eye"></i> Live
+                    </Link>
+                    {isBorrower && exchange.status === "Requested" && (
+                      <button onClick={() => { if(window.confirm("Revoke this request?")) revokeExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-ban"></i> Revoke</button>
+                    )}
+                    {!isBorrower && exchange.status === "Requested" && (
+                      <button onClick={() => { if(window.confirm("Decline this request?")) cancelExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)", fontSize: 11, border: "1px solid rgba(201,122,107,0.18)" }}><i className="fa-solid fa-xmark"></i> Decline</button>
+                    )}
+                    {(exchange.status === "Rated" || exchange.status === "Returned") && (
+                      <button onClick={() => { if(window.confirm("Delete this exchange?")) deleteExchange(exchange.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, fontSize: 11 }}><i className="fa-regular fa-trash-can"></i> Delete</button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );

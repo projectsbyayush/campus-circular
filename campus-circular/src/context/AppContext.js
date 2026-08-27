@@ -29,7 +29,14 @@ export const AppProvider = ({ children }) => {
 
   // Persistent states — load once
   const [allUsers, setAllUsers] = useState(() => load("cc_users", seedUsers));
-  const [allResources, setAllResources] = useState(() => load("cc_resources", seedResources));
+  const [allResources, setAllResources] = useState(() => {
+    const loaded = load("cc_resources", seedResources);
+    // patch older stored resources that lack isPublic
+    let patched = loaded.map(r => r.isPublic === undefined ? { ...r, isPublic: true } : r);
+    // version bump if needed
+    if (loaded !== patched) save("cc_resources", patched);
+    return patched;
+  });
   const [allExchanges, setAllExchanges] = useState(() => load("cc_exchanges", seedExchanges));
   const [allDisputes, setAllDisputes] = useState(() => load("cc_disputes", seedDisputes));
   const [allNotifications, setAllNotifications] = useState(() => load("cc_notifications", seedNotifications));
@@ -141,7 +148,7 @@ export const AppProvider = ({ children }) => {
 
   const addResource = (resource) => {
     const newId = Math.max(0, ...allResources.map(r=>r.id)) + 1;
-    const newResource = { ...resource, id: newId, owner: currentUser.id, createdAt: new Date().toISOString().split("T")[0], isApproved: false, isFlagged: false, totalBorrows: 0, rating: 0 };
+    const newResource = { ...resource, id: newId, owner: currentUser.id, createdAt: new Date().toISOString().split("T")[0], isApproved: false, isFlagged: false, isPublic: resource.isPublic !== false, totalBorrows: 0, rating: 0 };
     setAllResources(prev => [...prev, newResource]);
     setPendingList(prev => [...prev, { id: 100 + prev.length + 1, resource: resource.name, owner: currentUser.id, category: resource.category, status: "Pending", submittedDate: new Date().toISOString().split("T")[0] }]);
     // bump owner's shared count in realtime
@@ -155,9 +162,33 @@ export const AppProvider = ({ children }) => {
   const rejectResource = (resourceId) => setPendingList(prev => prev.filter((p) => p.id !== resourceId));
   const flagResource = (resourceId) => setAllResources(prev => prev.map((r) => (r.id === resourceId ? { ...r, isFlagged: true } : r)));
   const suspendUser = (userId) => setAllUsers(prev => prev.map((u) => (u.id === userId ? { ...u, isSuspended: !u.isSuspended } : u)));
-  const deleteResource = (resourceId) => setAllResources(prev => prev.filter(r => r.id !== resourceId));
+  const deleteResource = (resourceId) => {
+    // also clean pending and exchanges for that resource if owner deletes
+    setAllResources(prev => prev.filter(r => r.id !== resourceId));
+    setAllExchanges(prev => prev.filter(e => e.resourceId !== resourceId));
+    setPendingList(prev => prev.filter(p => p.id !== resourceId));
+  };
   const toggleAvailability = (resourceId) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, availability: r.availability === "Available" ? "Borrowed" : "Available" } : r));
+  const togglePublic = (resourceId) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, isPublic: !r.isPublic } : r));
   const updateResource = (resourceId, updates) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, ...updates } : r));
+
+  const revokeExchange = (exchangeId) => {
+    const ex = allExchanges.find(e => e.id === exchangeId);
+    if (!ex || ex.borrowerId !== currentUser.id) return;
+    if (!["Requested","Accepted"].includes(ex.status)) return;
+    setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
+    const notif = { id: Date.now(), userId: ex.ownerId, type: "update", exchangeId, message: `${currentUser.name} revoked request #${exchangeId} for "${allResources.find(r=>r.id===ex.resourceId)?.name || "item"}"`, time: "just now", read: false };
+    setAllNotifications(prev => [notif, ...prev]);
+  };
+  const cancelExchange = (exchangeId) => {
+    const ex = allExchanges.find(e => e.id === exchangeId);
+    if (!ex || ex.ownerId !== currentUser.id) return;
+    if (ex.status !== "Requested") return;
+    setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
+    const notif = { id: Date.now()+2, userId: ex.borrowerId, type: "update", exchangeId, message: `Owner declined your request #${exchangeId}`, time: "just now", read: false };
+    setAllNotifications(prev => [notif, ...prev]);
+  };
+  const deleteExchange = (exchangeId) => setAllExchanges(prev => prev.filter(e => e.id !== exchangeId));
 
   const initiateExchange = (resourceId, duration, startDate) => {
     const resource = allResources.find((r) => r.id === resourceId);
@@ -175,10 +206,10 @@ export const AppProvider = ({ children }) => {
     };
     setAllExchanges(prev => [...prev, newExchange]);
     setActiveExchanges(prev => [...prev, newExchange.id]);
-    // realtime notification to owner
+    // realtime notification to owner with pinpoint
     const owner = allUsers.find(u=>u.id===resource.owner);
     const borrower = currentUser;
-    const notif = { id: Date.now(), userId: owner.id, type: "request", message: `${borrower.name} requested "${resource.name}"`, time: "just now", read: false };
+    const notif = { id: Date.now(), userId: owner.id, type: "request", exchangeId: newId, resourceId, message: `${borrower.name} requested "${resource.name}"`, time: "just now", read: false };
     setAllNotifications(prev => [notif, ...prev]);
     // update borrower's profile stats instantly
     setAllUsers(prev => prev.map(u => {
@@ -191,11 +222,11 @@ export const AppProvider = ({ children }) => {
   const confirmAgreement = (exchangeId) => setAllExchanges(prev => prev.map((e) => e.id === exchangeId ? { ...e, agreement: true, status: "Accepted" } : e));
   const updateExchangeStatus = (exchangeId, status) => {
     setAllExchanges(prev => prev.map((e) => e.id === exchangeId ? { ...e, status, returnDate: status === "Returned" ? new Date().toISOString().split("T")[0] : e.returnDate } : e));
-    // notify other party
+    // notify other party with pinpoint
     const ex = allExchanges.find(e=>e.id===exchangeId);
     if (ex) {
       const otherId = currentUser.id === ex.borrowerId ? ex.ownerId : ex.borrowerId;
-      const notif = { id: Date.now()+1, userId: otherId, type: "update", message: `Exchange #${exchangeId} is now ${status}`, time: "just now", read: false };
+      const notif = { id: Date.now()+1, userId: otherId, type: "update", exchangeId, message: `Exchange #${exchangeId} is now ${status}`, time: "just now", read: false };
       setAllNotifications(prev => [notif, ...prev]);
     }
   };
@@ -228,7 +259,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, stats, pendingList,
     searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters, cart, setCart, activeExchanges,
-    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, updateResource, initiateExchange, confirmAgreement, updateExchangeStatus, raiseDispute, markNotificationRead, resetDemo
+    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, togglePublic, updateResource, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

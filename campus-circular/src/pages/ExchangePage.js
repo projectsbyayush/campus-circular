@@ -6,7 +6,7 @@ import { useApp } from "../context/AppContext";
 const ExchangePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { allExchanges, allResources, allUsers, currentUser, confirmAgreement, updateExchangeStatus, raiseDispute } = useApp();
+  const { allExchanges, allResources, allUsers, currentUser, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute } = useApp();
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
 
@@ -43,6 +43,34 @@ const ExchangePage = () => {
 
   const lateFee = exchange.status === "Returned" && exchange.returnDate > exchange.endDate ? Math.ceil((new Date(exchange.returnDate) - new Date(exchange.endDate)) / (1000 * 60 * 60 * 24)) * 50 : 0;
 
+  const isOwner = currentUser.id === exchange.ownerId;
+  const isBorrower = currentUser.id === exchange.borrowerId;
+  const canProgress = (targetStatus) => {
+    const order = statusOrder;
+    const curIdx = order.indexOf(exchange.status);
+    const tgtIdx = order.indexOf(targetStatus);
+    if (tgtIdx !== curIdx + 1) return false;
+    // permission matrix
+    if (targetStatus === "Accepted") return isOwner && exchange.status === "Requested";
+    if (targetStatus === "Handover") return isBorrower && exchange.status === "Accepted";
+    if (targetStatus === "Borrowed") return isBorrower && exchange.status === "Handover";
+    if (targetStatus === "Return Due") return isBorrower && exchange.status === "Borrowed";
+    if (targetStatus === "Returned") return isBorrower && exchange.status === "Return Due";
+    if (targetStatus === "Inspection") return isOwner && exchange.status === "Returned";
+    if (targetStatus === "Settlement") return isOwner && exchange.status === "Inspection";
+    if (targetStatus === "Rated") return true;
+    return false;
+  };
+  const handleTimelineClick = (statusKey) => {
+    const lifecycleToStatus = { "Requested":"Requested","Accepted":"Accepted","Handover":"Handover","Borrowed":"Borrowed","Return Due":"Return Due","Returned":"Returned","Inspection":"Inspection","Settlement":"Settlement","Rated":"Rated" };
+    const target = lifecycleToStatus[statusKey];
+    if (!target || target===exchange.status) return;
+    if (canProgress(target)) {
+      if (target==="Accepted") confirmAgreement(exchange.id);
+      else updateExchangeStatus(exchange.id, target);
+    }
+  };
+
   return (
     <div className="page">
       <button className="btn btn-ghost" onClick={() => navigate(-1)} style={{ marginBottom: "18px" }}>
@@ -50,24 +78,55 @@ const ExchangePage = () => {
       </button>
 
       <div className="page-header">
-        <h1 className="page-title">Exchange <em>#{exchange.id}</em></h1>
-        <p className="page-subtitle">{resource?.name} — {exchange.status}</p>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <h1 className="page-title" style={{ marginBottom: 0 }}>Exchange <em>#{exchange.id}</em></h1>
+          <span className={`badge ${exchange.status==="Requested"?"badge-warning":exchange.status==="Borrowed"?"badge-warning":exchange.status==="Returned"||exchange.status==="Rated"?"badge-success":"badge-neutral"}`} style={{ fontSize: 12 }}>{exchange.status}</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "JetBrains Mono, monospace" }}>{isOwner ? "You are owner" : isBorrower ? "You are borrower" : ""} • Live</span>
+        </div>
+        <p className="page-subtitle">{resource?.name} — {exchange.startDate} → {exchange.endDate} {exchange.returnDate ? `• returned ${exchange.returnDate}` : ""}</p>
       </div>
 
-      <div className="card" style={{ padding: "18px", marginBottom: "24px" }}>
-        <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><i className="fa-solid fa-route" style={{ marginRight: '6px' }}></i>Lifecycle</h3>
+      <div className="card" style={{ padding: "18px", marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-route" style={{ color: "var(--primary)" }}></i>Live lifecycle — {isOwner ? "owner controls" : "borrower controls"} • click next dot to progress</h3>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}><i className="fa-solid fa-circle" style={{ color: "var(--success)", fontSize: 8 }}></i> realtime • {new Date().toLocaleTimeString()}</span>
+        </div>
         <div className="lifecycle">
-          {lifecycleSteps.map((step, i) => (
-            <React.Fragment key={step.key}>
-              <div className="lifecycle-step">
-                <div className={`lifecycle-dot ${i < currentStepIndex ? "completed" : i === currentStepIndex ? "active" : ""}`}>
-                  <i className={step.icon} style={{ fontSize: '13px' }}></i>
+          {lifecycleSteps.map((step, i) => {
+            const statusForStep = step.key==="Available" ? null : step.key;
+            const idx = statusForStep ? statusOrder.indexOf(statusForStep) : -1;
+            const isCompleted = idx !== -1 && idx < currentStepIndex;
+            const isActive = idx === currentStepIndex;
+            const isNext = idx === currentStepIndex+1;
+            const clickable = statusForStep && isNext && canProgress(statusForStep);
+            return (
+              <React.Fragment key={step.key}>
+                <div className="lifecycle-step" style={{ opacity: step.key==="Available" && currentStepIndex===-1 ? 0.5 : 1 }}>
+                  <div
+                    className={`lifecycle-dot ${isCompleted ? "completed" : isActive ? "active" : ""}`}
+                    onClick={() => statusForStep && handleTimelineClick(statusForStep)}
+                    title={clickable ? `Click to move to ${statusForStep} (you have permission)` : isActive ? "Current stage" : isCompleted ? "Completed" : "Upcoming"}
+                    style={{ cursor: clickable ? "pointer" : "default", position: "relative", border: clickable ? "2px dashed var(--primary)" : undefined }}
+                  >
+                    <i className={step.icon} style={{ fontSize: '13px' }}></i>
+                    {clickable && <span style={{ position: "absolute", top: -6, right: -6, width: 14, height: 14, background: "var(--primary)", color: "white", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, border: "1px solid var(--bg-card)" }}><i className="fa-solid fa-arrow-right"></i></span>}
+                  </div>
+                  <span className="lifecycle-label" style={{ color: isActive ? "var(--primary)" : isCompleted ? "var(--success)" : "var(--text-muted)", fontWeight: isActive?700:500 }}>{step.key}</span>
+                  {isActive && <span style={{ fontSize: 9, color: "var(--primary)", fontWeight: 700, letterSpacing: "0.06em" }}>LIVE</span>}
                 </div>
-                <span className="lifecycle-label">{step.key}</span>
-              </div>
-              {i < lifecycleSteps.length - 1 && <div className={`lifecycle-line ${i < currentStepIndex ? "completed" : ""}`} />}
-            </React.Fragment>
-          ))}
+                {i < lifecycleSteps.length - 1 && <div className={`lifecycle-line ${isCompleted ? "completed" : ""}`} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 10, padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12, color: "var(--text-secondary)", display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <span><i className="fa-solid fa-user" style={{ color: isOwner ? "var(--primary)" : "var(--text-muted)" }}></i> Owner: <b>{owner?.name}</b> {isOwner && "(you)"}</span>
+          <span>•</span>
+          <span><i className="fa-solid fa-user" style={{ color: isBorrower ? "var(--primary)" : "var(--text-muted)" }}></i> Borrower: <b>{borrower?.name}</b> {isBorrower && "(you)"}</span>
+          <span>•</span>
+          <span><i className="fa-solid fa-box"></i> {resource?.name}</span>
+          <span>•</span>
+          <span style={{ fontFamily: "JetBrains Mono, monospace" }}><i className="fa-regular fa-calendar"></i> {exchange.startDate} → {exchange.endDate}</span>
         </div>
       </div>
 
@@ -155,28 +214,40 @@ const ExchangePage = () => {
           </div>
 
           <div className="card" style={{ padding: "18px" }}>
-            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Actions</h3>
+            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", justifyContent: "space-between" }}>
+              <span>Owner controls</span>
+              <span style={{ fontSize: 10, color: isOwner ? "var(--primary)" : "var(--text-muted)", border: "1px solid var(--border)", padding: "2px 6px", borderRadius: 999 }}>{isOwner ? "You are owner — click timeline" : isBorrower ? "You are borrower" : ""}</span>
+            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {exchange.status === "Requested" && !exchange.agreement && currentUser.id === exchange.ownerId && (
-                <button className="btn btn-success btn-block" onClick={() => confirmAgreement(exchange.id)}><i className="fa-solid fa-check"></i> Accept & confirm</button>
+              {exchange.status === "Requested" && !exchange.agreement && isOwner && (
+                <button className="btn btn-success btn-block" onClick={() => confirmAgreement(exchange.id)}><i className="fa-solid fa-check"></i> Accept & confirm (owner)</button>
               )}
-              {exchange.status === "Accepted" && currentUser.id === exchange.borrowerId && (
+              {exchange.status === "Requested" && isOwner && (
+                <button className="btn btn-ghost btn-block" onClick={() => { if(window.confirm("Decline this request?")) cancelExchange(exchange.id); }} style={{ color: "var(--danger)", border: "1px solid rgba(201,122,107,0.2)" }}><i className="fa-solid fa-xmark"></i> Decline request (owner)</button>
+              )}
+              {exchange.status === "Requested" && isBorrower && (
+                <button className="btn btn-ghost btn-block" onClick={() => { if(window.confirm("Revoke your request?")) { revokeExchange(exchange.id); navigate("/exchanges"); } }} style={{ color: "var(--danger)", border: "1px solid rgba(201,122,107,0.2)" }}><i className="fa-solid fa-rotate-left"></i> Revoke request (borrower)</button>
+              )}
+              {exchange.status === "Accepted" && isBorrower && (
                 <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Handover")}><i className="fa-solid fa-handshake"></i> Mark handed over</button>
               )}
-              {exchange.status === "Handover" && currentUser.id === exchange.borrowerId && (
+              {exchange.status === "Accepted" && isBorrower && (
+                <button className="btn btn-ghost btn-sm btn-block" onClick={() => { if(window.confirm("Revoke after accept?")) revokeExchange(exchange.id); }} style={{ color: "var(--danger)" }}><i className="fa-solid fa-ban"></i> Revoke (borrower)</button>
+              )}
+              {exchange.status === "Handover" && isBorrower && (
                 <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Borrowed")}><i className="fa-solid fa-arrow-right-arrow-left"></i> Mark as borrowed</button>
               )}
-              {exchange.status === "Borrowed" && currentUser.id === exchange.borrowerId && (
+              {exchange.status === "Borrowed" && isBorrower && (
                 <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Return Due")}><i className="fa-regular fa-clock"></i> Mark return due</button>
               )}
-              {exchange.status === "Return Due" && currentUser.id === exchange.borrowerId && (
+              {exchange.status === "Return Due" && isBorrower && (
                 <button className="btn btn-success btn-block" onClick={() => updateExchangeStatus(exchange.id, "Returned")}><i className="fa-solid fa-rotate-left"></i> Mark as returned</button>
               )}
-              {exchange.status === "Returned" && currentUser.id === exchange.ownerId && (
-                <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Inspection")}><i className="fa-solid fa-magnifying-glass"></i> Start inspection</button>
+              {exchange.status === "Returned" && isOwner && (
+                <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Inspection")}><i className="fa-solid fa-magnifying-glass"></i> Start inspection (owner)</button>
               )}
-              {exchange.status === "Inspection" && currentUser.id === exchange.ownerId && (
-                <button className="btn btn-success btn-block" onClick={() => updateExchangeStatus(exchange.id, "Settlement")}><i className="fa-solid fa-indian-rupee-sign"></i> Complete settlement</button>
+              {exchange.status === "Inspection" && isOwner && (
+                <button className="btn btn-success btn-block" onClick={() => updateExchangeStatus(exchange.id, "Settlement")}><i className="fa-solid fa-indian-rupee-sign"></i> Complete settlement (owner)</button>
               )}
               {exchange.status === "Settlement" && (
                 <button className="btn btn-primary btn-block" onClick={() => updateExchangeStatus(exchange.id, "Rated")}><i className="fa-solid fa-star"></i> Rate & complete</button>
@@ -184,7 +255,13 @@ const ExchangePage = () => {
               <button className="btn btn-ghost btn-block" onClick={() => setShowDisputeModal(true)} style={{ color: 'var(--danger)', borderColor: 'rgba(201,122,107,0.2)' }}>
                 <i className="fa-solid fa-triangle-exclamation"></i> Raise dispute
               </button>
+              {(exchange.status === "Rated" || exchange.status === "Returned") && (
+                <button className="btn btn-ghost btn-block" onClick={() => { if(window.confirm("Delete this exchange record?")) { deleteExchange(exchange.id); navigate("/exchanges"); } }} style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  <i className="fa-regular fa-trash-can"></i> Delete record
+                </button>
+              )}
             </div>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 8, textAlign: "center" }}>Tip: Owner can click the next dot in timeline to progress live.</p>
           </div>
         </div>
       </div>

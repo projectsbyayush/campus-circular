@@ -4,10 +4,10 @@ import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 
 const HomePage = () => {
-  const { allResources, allUsers, stats } = useApp();
+  const { allResources, allUsers, currentUser, stats } = useApp();
   const getOwnerAvatar = (ownerId) => allUsers.find(u => u.id === ownerId)?.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=user${ownerId}`;
   const [landingCategory, setLandingCategory] = useState("All");
-  const featured = allResources.filter(r => r.isApproved && (landingCategory === "All" || r.category === landingCategory) && r.availability === "Available").slice(0, 6);
+  const featured = allResources.filter(r => r.isApproved && (r.isPublic !== false || r.owner === currentUser.id) && (landingCategory === "All" || r.category === landingCategory) && r.availability === "Available").slice(0, 6);
 
   const heroStats = [
     { icon: "fa-solid fa-users", value: stats.activeMembers, label: "Active Members", bg: "rgba(217,119,87,0.1)", color: "#D97757" },

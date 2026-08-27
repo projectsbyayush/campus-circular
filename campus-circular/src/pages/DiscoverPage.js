@@ -17,13 +17,13 @@ const catIcons = {
 };
 
 const DiscoverPage = () => {
-  const { allResources, allUsers, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters } = useApp();
+  const { allResources, allUsers, currentUser, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters } = useApp();
   const navigate = useNavigate();
   const getOwnerAvatar = (ownerId) => allUsers.find(u => u.id === ownerId)?.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=user${ownerId}`;
   const [view, setView] = useState("grid");
 
   const filteredResources = useMemo(() => {
-    let result = allResources.filter((r) => r.isApproved);
+    let result = allResources.filter((r) => r.isApproved && (r.isPublic !== false || r.owner === currentUser.id));
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter((r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));

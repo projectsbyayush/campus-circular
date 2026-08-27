@@ -6,25 +6,27 @@ import LocationMap from "../components/LocationMap";
 import LocationPicker from "../components/LocationPicker";
 
 const MyListingsPage = () => {
-  const { currentUser, allResources, allExchanges, deleteResource, toggleAvailability, updateResource } = useApp();
+  const { currentUser, allResources, allExchanges, deleteResource, toggleAvailability, togglePublic, updateResource } = useApp();
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({});
 
   const myResources = allResources.filter(r => r.owner === currentUser.id);
   const filtered = filter === "all" ? myResources : myResources.filter(r => {
-    if (filter === "available") return r.availability === "Available" && r.isApproved;
+    if (filter === "available") return r.availability === "Available" && r.isApproved && r.isPublic !== false;
     if (filter === "borrowed") return r.availability === "Borrowed";
     if (filter === "pending") return !r.isApproved;
+    if (filter === "private") return r.isPublic === false;
     if (filter === "flagged") return r.isFlagged;
     return true;
   });
 
   const stats = {
     total: myResources.length,
-    available: myResources.filter(r => r.availability === "Available" && r.isApproved).length,
+    available: myResources.filter(r => r.availability === "Available" && r.isApproved && r.isPublic !== false).length,
     borrowed: myResources.filter(r => r.availability === "Borrowed").length,
     pending: myResources.filter(r => !r.isApproved).length,
+    privates: myResources.filter(r => r.isPublic === false).length,
   };
 
   const openEdit = (resource) => {
@@ -46,11 +48,12 @@ const MyListingsPage = () => {
         <p className="page-subtitle">All items you’ve listed for the campus — pinpointed, managed, and tracked. {myResources.length} total.</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
         {[
           { label: "Total", value: stats.total, icon: "fa-solid fa-box", color: "var(--primary)" },
           { label: "Available", value: stats.available, icon: "fa-solid fa-circle-check", color: "var(--success)" },
           { label: "Borrowed", value: stats.borrowed, icon: "fa-solid fa-arrow-right-arrow-left", color: "var(--warning)" },
+          { label: "Private", value: stats.privates, icon: "fa-solid fa-eye-slash", color: "var(--text-muted)" },
           { label: "Pending", value: stats.pending, icon: "fa-regular fa-clock", color: "var(--text-muted)" },
         ].map(s => (
           <div key={s.label} className="card" style={{ padding: 14, display: "flex", gap: 12, alignItems: "center" }}>
@@ -64,6 +67,7 @@ const MyListingsPage = () => {
         {[
           { k: "all", l: `All (${stats.total})` },
           { k: "available", l: `Available (${stats.available})` },
+          { k: "private", l: `Private (${stats.privates})` },
           { k: "borrowed", l: `Borrowed (${stats.borrowed})` },
           { k: "pending", l: `Pending (${stats.pending})` },
         ].map(t => (
@@ -93,6 +97,7 @@ const MyListingsPage = () => {
                       <span className="badge badge-primary">{r.condition}</span>
                       <span className={`badge ${r.isApproved ? "badge-success" : "badge-warning"}`}>{r.isApproved ? "Approved" : "Pending approval"}</span>
                       <span className={`badge ${r.availability === "Available" ? "badge-success" : "badge-warning"}`}>{r.availability}</span>
+                      <span className={`badge ${r.isPublic===false ? "badge-danger" : "badge-success"}`}><i className={`fa-solid ${r.isPublic===false ? "fa-eye-slash" : "fa-eye"}`}></i> {r.isPublic===false ? "Private" : "Public"}</span>
                       {r.isFlagged && <span className="badge badge-danger"><i className="fa-solid fa-flag"></i> Flagged</span>}
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{r.name}</div>
@@ -115,9 +120,12 @@ const MyListingsPage = () => {
                       <button onClick={() => toggleAvailability(r.id)} className={`btn btn-sm ${r.availability === "Available" ? "btn-secondary" : "btn-success"}`} style={{ borderRadius: 999 }}>
                         <i className={`fa-solid ${r.availability === "Available" ? "fa-pause" : "fa-play"}`}></i> {r.availability === "Available" ? "Mark borrowed" : "Mark available"}
                       </button>
+                      <button onClick={() => togglePublic(r.id)} className={`btn btn-sm ${r.isPublic===false ? "btn-primary" : "btn-secondary"}`} style={{ borderRadius: 999 }} title={r.isPublic===false ? "Make public — visible in Discover" : "Make private — hidden from Discover"}>
+                        <i className={`fa-solid ${r.isPublic===false ? "fa-eye" : "fa-eye-slash"}`}></i> {r.isPublic===false ? "Make public" : "Make private"}
+                      </button>
                       <button onClick={() => openEdit(r)} className="btn btn-secondary btn-sm" style={{ borderRadius: 999 }}><i className="fa-solid fa-pen"></i> Edit pinpoint</button>
                       <Link to={`/resource/${r.id}`} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, border: "1px solid var(--border)" }}><i className="fa-solid fa-eye"></i> View</Link>
-                      <button onClick={() => { if (window.confirm(`Delete "${r.name}"?`)) deleteResource(r.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)" }}><i className="fa-regular fa-trash-can"></i> Delete</button>
+                      <button onClick={() => { if (window.confirm(`Delete "${r.name}"? This will revoke it for everyone.`)) deleteResource(r.id); }} className="btn btn-ghost btn-sm" style={{ borderRadius: 999, color: "var(--danger)" }}><i className="fa-regular fa-trash-can"></i> Delete</button>
                     </div>
                   </div>
                   <div style={{ padding: 12, background: "var(--bg-surface)", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 8 }}>

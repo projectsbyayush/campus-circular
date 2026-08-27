@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 
@@ -63,7 +64,10 @@ const ProfilePage = () => {
 
         <div>
           <div style={{ marginBottom: "24px" }}>
-            <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: "18px", fontWeight: 400, marginBottom: "12px" }}>Your listings <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', color: 'var(--text-muted)', marginLeft: '6px' }}>({userResources.length})</span></h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: "18px", fontWeight: 400 }}>Your listings <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', color: 'var(--text-muted)', marginLeft: '6px' }}>({userResources.length})</span></h3>
+              <Link to="/my-listings" className="btn btn-primary btn-sm" style={{ borderRadius: "999px" }}><i className="fa-solid fa-box"></i> Manage listings</Link>
+            </div>
             {userResources.length === 0 ? (
               <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                 <i className="fa-solid fa-box-open" style={{ fontSize: '18px', marginBottom: '8px', display: 'block' }}></i>
@@ -72,17 +76,21 @@ const ProfilePage = () => {
             ) : (
               <div className="grid grid-2">
                 {userResources.map((r) => (
-                  <div key={r.id} className="card" style={{ display: "flex", overflow: "hidden" }}>
-                    <img src={r.images[0]} alt={r.name} style={{ width: "110px", height: "110px", objectFit: "cover" }} />
-                    <div style={{ padding: "12px", flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{r.name}</div>
-                      <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-                        <span className="badge badge-neutral" style={{ fontSize: "10px" }}>{r.category}</span>
-                        <span className={`badge ${r.availability === "Available" ? "badge-success" : "badge-danger"}`} style={{ fontSize: "10px" }}>{r.availability}</span>
+                  <Link to={`/resource/${r.id}`} key={r.id} style={{ textDecoration: "none" }}>
+                    <div className="card" style={{ display: "flex", overflow: "hidden" }}>
+                      <img src={r.images[0]} alt={r.name} style={{ width: "110px", height: "110px", objectFit: "cover" }} />
+                      <div style={{ padding: "12px", flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{r.name}</div>
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" }}>
+                          <span className="badge badge-neutral" style={{ fontSize: "10px" }}>{r.category}</span>
+                          <span className={`badge ${r.availability === "Available" ? "badge-success" : "badge-warning"}`} style={{ fontSize: "10px" }}>{r.availability}</span>
+                          <span className={`badge ${r.isPublic===false ? "badge-danger" : "badge-success"}`} style={{ fontSize: "10px" }}><i className={`fa-solid ${r.isPublic===false ? "fa-eye-slash" : "fa-eye"}`}></i> {r.isPublic===false ? "Private" : "Public"}</span>
+                          {!r.isApproved && <span className="badge badge-warning" style={{ fontSize: "10px" }}>Pending</span>}
+                        </div>
+                        <div style={{ fontWeight: 700, color: "var(--primary)", fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>₹{r.dailyRate}/day • <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{r.location}</span></div>
                       </div>
-                      <div style={{ fontWeight: 700, color: "var(--primary)", fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>₹{r.dailyRate}/day</div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

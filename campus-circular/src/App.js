@@ -43,7 +43,7 @@ const RequireAdmin = ({ children }) => {
 };
 
 const Navbar = () => {
-  const { currentUser, allNotifications, logout, theme, toggleTheme } = useApp();
+  const { currentUser, allNotifications, logout, theme, toggleTheme, markNotificationRead } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -97,11 +97,31 @@ const Navbar = () => {
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="notification-dropdown">
                   <h4><i className="fa-regular fa-bell" style={{ marginRight: '8px', color: 'var(--primary)' }}></i>Notifications</h4>
                   {allNotifications.filter((n) => n.userId === currentUser.id).map((n) => (
-                    <div key={n.id} className={`notif-item ${!n.read ? "unread" : ""}`}>
-                      <p>{n.message}</p>
-                      <span className="notif-time">{n.time}</span>
+                    <div
+                      key={n.id}
+                      className={`notif-item ${!n.read ? "unread" : ""}`}
+                      onClick={() => {
+                        markNotificationRead(n.id);
+                        setShowNotifications(false);
+                        if (n.exchangeId) navigate(`/exchange/${n.exchangeId}`);
+                        else if (n.resourceId) navigate(`/resource/${n.resourceId}`);
+                      }}
+                      style={{ cursor: n.exchangeId || n.resourceId ? "pointer" : "default" }}
+                    >
+                      <p style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {n.type === "request" ? <i className="fa-solid fa-paper-plane" style={{ color: "var(--primary)", fontSize: 11 }}></i> : n.type === "update" ? <i className="fa-solid fa-rotate" style={{ color: "var(--success)" }}></i> : <i className="fa-solid fa-bell"></i>}
+                        {n.message}
+                      </p>
+                      <span className="notif-time" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>{n.time}</span>
+                        {(n.exchangeId || n.resourceId) && <span style={{ color: "var(--primary)", fontWeight: 600 }}>View →</span>}
+                      </span>
+                      {!n.read && <span style={{ fontSize: 9, color: "var(--primary)", fontWeight: 700, letterSpacing: "0.06em" }}>NEW • LIVE</span>}
                     </div>
                   ))}
+                  {allNotifications.filter(n => n.userId === currentUser.id).length === 0 && (
+                    <div style={{ padding: 16, textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>No notifications • Live updates appear here</div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
