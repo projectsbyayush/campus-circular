@@ -4,19 +4,10 @@ import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
 
 const HomePage = () => {
-  const { allResources, allUsers, currentUser, stats } = useApp();
+  const { allResources, allUsers, currentUser } = useApp();
   const getOwnerAvatar = (ownerId) => allUsers.find(u => u.id === ownerId)?.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=user${ownerId}`;
   const [landingCategory, setLandingCategory] = useState("All");
   const featured = allResources.filter(r => r.isApproved && (r.isPublic !== false || r.owner === currentUser.id) && (landingCategory === "All" || r.category === landingCategory) && r.availability === "Available").slice(0, 6);
-
-  const heroStats = [
-    { icon: "fa-solid fa-users", value: stats.activeMembers, label: "Active Members", bg: "rgba(217,119,87,0.1)", color: "#D97757" },
-    { icon: "fa-solid fa-box-open", value: stats.resourcesShared, label: "Resources Shared", bg: "rgba(107,142,127,0.1)", color: "#6B8E7F" },
-    { icon: "fa-solid fa-arrow-right-arrow-left", value: stats.successfulExchanges, label: "Exchanges", bg: "rgba(143,163,176,0.12)", color: "#8FA3B0" },
-    { icon: "fa-solid fa-piggy-bank", value: `₹${(stats.moneySaved / 1000).toFixed(0)}K`, label: "Money Saved", bg: "rgba(217,166,121,0.12)", color: "#D9A679" },
-    { icon: "fa-solid fa-recycle", value: stats.resourcesReused, label: "Reused", bg: "rgba(123,163,126,0.12)", color: "#7BA37E" },
-    { icon: "fa-solid fa-leaf", value: `${stats.carbonSaved}kg`, label: "CO₂ Saved", bg: "rgba(123,163,126,0.1)", color: "#7BA37E" },
-  ];
 
   const steps = [
     { n: "01", icon: "fa-solid fa-magnifying-glass", title: "Discover", desc: "Search or ask AI — 'camera for shooting' finds the full kit." },
@@ -89,27 +80,13 @@ const HomePage = () => {
                 <i className="fa-solid fa-plus"></i> List an Item
               </Link>
             </div>
-            {/* Hero proof */}
+            {/* Hero proof — no analytics, just trust */}
             <div style={{ marginTop: '26px', display: 'flex', gap: '14px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ display: 'flex', marginRight: '10px' }}>
-                  {allUsers.slice(0,4).map((u,i) => (
-                    <img key={u.id} src={u.avatar} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--bg)', marginLeft: i===0?0:'-8px', background: 'var(--bg-surface)' }} />
-                  ))}
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ display: 'flex', gap: '2px', color: 'var(--warning)', fontSize: '12px' }}>
-                    <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i>
-                    <span style={{ color: 'var(--text)', fontWeight: 700, marginLeft: '4px' }}>4.8/5</span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Trusted by {stats.activeMembers} students • {stats.successfulExchanges} exchanges • Ayush ↔ Tejas</div>
-                </div>
-              </div>
-              <div style={{ width: '1px', height: '32px', background: 'var(--border)', display: 'block' }} className="hero-divider" />
               <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                <span><i className="fa-solid fa-shield-halved" style={{ color: 'var(--success)', marginRight: '4px' }}></i>Verified</span>
+                <span><i className="fa-solid fa-shield-halved" style={{ color: 'var(--success)', marginRight: '4px' }}></i>Verified students</span>
                 <span><i className="fa-solid fa-lock" style={{ color: 'var(--primary)', marginRight: '4px' }}></i>Deposit safe</span>
-                <span><i className="fa-solid fa-leaf" style={{ color: 'var(--success)', marginRight: '4px' }}></i>2.3t CO₂ saved</span>
+                <span><i className="fa-solid fa-wand-magic-sparkles" style={{ color: 'var(--primary)', marginRight: '4px' }}></i>AI help</span>
+                <span><i className="fa-solid fa-leaf" style={{ color: 'var(--success)', marginRight: '4px' }}></i>Circular</span>
               </div>
             </div>
 
@@ -133,31 +110,14 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Trusted bar */}
+      {/* Trusted bar — no analytics */}
       <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-card)', padding: '14px 28px' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', gap: '18px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><i className="fa-solid fa-building-columns"></i> Trusted by {stats.activeMembers} students (Ayush & Tejas) • 2 departments</span>
-          <span style={{ display: 'flex', gap: '14px' }}>
-            <span><i className="fa-solid fa-star" style={{ color: 'var(--warning)' }}></i> 4.8 avg trust</span>
-            <span><i className="fa-regular fa-clock"></i> 2.3h avg response</span>
-            <span><i className="fa-solid fa-rotate-left" style={{ color: 'var(--success)' }}></i> 94% on-time returns</span>
-          </span>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', gap: '18px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><i className="fa-solid fa-handshake"></i> Share what you have • Borrow what you need • No analytics, just trust</span>
         </div>
       </div>
 
       <div className="page" style={{ paddingTop: '28px' }}>
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", marginBottom: "28px" }}>
-          {heroStats.map((s, i) => (
-            <motion.div key={i} className="stat-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} style={{ padding: '16px' }}>
-              <div className="stat-icon" style={{ background: s.bg, color: s.color, borderColor: 'transparent', width: '36px', height: '36px', fontSize: '14px' }}>
-                <i className={s.icon}></i>
-              </div>
-              <div className="stat-value" style={{ fontSize: '22px' }}>{s.value}</div>
-              <div className="stat-label" style={{ fontSize: '11px' }}>{s.label}</div>
-            </motion.div>
-          ))}
-        </div>
 
         {/* How it works */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
@@ -284,10 +244,10 @@ const HomePage = () => {
           <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '18px' }}>Built for campus — trust, transparency, and sustainability by design.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
             {[
-              { icon: "fa-solid fa-shield-halved", title: "Verified trust", desc: "Trust scores, ratings, and verified students. See history before you borrow." },
-              { icon: "fa-solid fa-scale-balanced", title: "Transparent pricing", desc: "Borrowing + platform fee + refundable deposit. No hidden costs, clear settlement." },
-              { icon: "fa-solid fa-wand-magic-sparkles", title: "AI discovery", desc: "Describe needs in plain language. Handles typos like 'camra' and finds the full kit." },
-              { icon: "fa-solid fa-leaf", title: "Sustainable impact", desc: "Reuse over re-buy. 2.3 tonnes CO₂ saved, ₹1.5L saved by students." },
+              { icon: "fa-solid fa-shield-halved", title: "Verified trust", desc: "Trust scores and verified students. See history before you borrow." },
+              { icon: "fa-solid fa-scale-balanced", title: "Transparent pricing", desc: "Clear borrowing fee + refundable deposit. No hidden costs." },
+              { icon: "fa-solid fa-wand-magic-sparkles", title: "AI discovery", desc: "Describe needs in plain language. Handles typos and finds the full kit." },
+              { icon: "fa-solid fa-leaf", title: "Sustainable", desc: "Reuse over re-buy. Sharing over owning for a circular campus." },
             ].map((f, i) => (
               <motion.div key={i} className="card" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }} style={{ padding: '18px' }}>
                 <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: '12px' }}><i className={f.icon}></i></div>
