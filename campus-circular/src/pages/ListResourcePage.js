@@ -8,7 +8,7 @@ import LocationPicker from "../components/LocationPicker";
 const ListResourcePage = () => {
   const navigate = useNavigate();
   const { addResource } = useApp();
-  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" });
+  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow", depositType: "refundable", depositRefundable: "", depositNonRefundable: "" });
   const [imagePreview, setImagePreview] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -42,19 +42,31 @@ const ListResourcePage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.location || !form.coordinates) return;
-    // simple distance from campus center 28.5445,77.1925
     const dLat = form.coordinates.lat - 28.5445;
     const dLng = form.coordinates.lng - 77.1925;
     const distKm = Math.sqrt(dLat*dLat + dLng*dLng) * 111;
     const distance = `${distKm.toFixed(1)} km`;
+    const isDonate = form.listingType === "donate";
+    const depTotal = isDonate ? 0 : parseInt(form.securityDeposit) || 0;
+    let depRefundable = 0, depNonRefund = 0;
+    if (!isDonate) {
+      if (form.depositType === "refundable") { depRefundable = depTotal; depNonRefund = 0; }
+      else if (form.depositType === "non-refundable") { depRefundable = 0; depNonRefund = depTotal; }
+      else { depRefundable = parseInt(form.depositRefundable) || Math.floor(depTotal*0.6); depNonRefund = parseInt(form.depositNonRefundable) || (depTotal - depRefundable); }
+    }
     const resource = {
       ...form,
       distance,
-      hourlyRate: parseInt(form.hourlyRate) || 0,
-      dailyRate: parseInt(form.dailyRate) || 0,
-      minCharge: parseInt(form.minCharge) || 0,
-      securityDeposit: parseInt(form.securityDeposit) || 0,
-      platformFeePercent: parseInt(form.platformFeePercent) || 5,
+      listingType: isDonate ? "donate" : "borrow",
+      depositType: isDonate ? "refundable" : form.depositType,
+      depositRefundable: depRefundable,
+      depositNonRefundable: depNonRefund,
+      hourlyRate: isDonate ? 0 : parseInt(form.hourlyRate) || 0,
+      dailyRate: isDonate ? 0 : parseInt(form.dailyRate) || 0,
+      minCharge: isDonate ? 0 : parseInt(form.minCharge) || 0,
+      securityDeposit: depTotal,
+      platformFeePercent: isDonate ? 0 : parseInt(form.platformFeePercent) || 5,
+      conditionReports: [],
       accessories: form.accessories.split(",").map((a) => a.trim()).filter(Boolean),
       images: form.images ? [form.images] : ["https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400"],
       availability: "Available",
@@ -71,11 +83,11 @@ const ListResourcePage = () => {
           <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '22px', margin: '0 auto 16px' }}>
             <i className="fa-solid fa-check"></i>
           </div>
-          <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: "26px", fontWeight: 400, marginBottom: "8px" }}>Listed for <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>review</em></h1>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "20px", fontSize: '14px', lineHeight: 1.6 }}>Your resource is pending admin approval. You'll be notified once it's live — usually within a few hours.</p>
+          <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: "26px", fontWeight: 400, marginBottom: "8px" }}>{form.listingType === "donate" ? "Donated" : "Listed"} for <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>{form.listingType === "donate" ? "campus" : "review"}</em></h1>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "20px", fontSize: '14px', lineHeight: 1.6 }}>{form.listingType === "donate" ? "Your donation is live — other students (Tejas/Ayush) can now claim it for free. No deposit, no fees." : "Your resource is now live for Ayush ↔ Tejas. Other user can see it instantly in Discover."}</p>
           <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             <button className="btn btn-primary" onClick={() => navigate("/discover")}><i className="fa-solid fa-compass"></i> Browse resources</button>
-            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "" }); }}><i className="fa-solid fa-plus"></i> List another</button>
+            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow", depositType: "refundable", depositRefundable: "", depositNonRefundable: "" }); setImagePreview(""); }}><i className="fa-solid fa-plus"></i> List another</button>
           </div>
         </motion.div>
       </div>
@@ -91,6 +103,19 @@ const ListResourcePage = () => {
 
       <div style={{ maxWidth: "700px", margin: "0 auto" }}>
         <form onSubmit={handleSubmit}>
+          <div className="card" style={{ padding: "16px", marginBottom: "16px", display: "flex", gap: 8, background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+            <button type="button" onClick={() => setForm({ ...form, listingType: "borrow" })} className={`btn ${form.listingType === "borrow" ? "btn-primary" : "btn-ghost"}`} style={{ flex: 1, borderRadius: 999, justifyContent: "center", border: form.listingType === "borrow" ? "1px solid var(--primary)" : "1px solid var(--border)" }}>
+              <i className="fa-solid fa-handshake"></i> Lend / Borrow — with charges & deposit
+            </button>
+            <button type="button" onClick={() => setForm({ ...form, listingType: "donate", dailyRate: "0", hourlyRate: "0", securityDeposit: "0", minCharge: "0" })} className={`btn ${form.listingType === "donate" ? "btn-primary" : "btn-ghost"}`} style={{ flex: 1, borderRadius: 999, justifyContent: "center", border: form.listingType === "donate" ? "1px solid var(--primary)" : "1px solid var(--border)" }}>
+              <i className="fa-solid fa-gift"></i> Donate — free, no deposit
+            </button>
+          </div>
+          {form.listingType === "donate" && (
+            <div style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.18)", borderRadius: 10, padding: "10px 12px", marginBottom: 16, fontSize: 12, color: "var(--success)", display: "flex", gap: 8, alignItems: "center" }}>
+              <i className="fa-solid fa-heart"></i> Donate mode — item will be listed as <b>FREE</b> (₹0/day, ₹0 deposit, no platform fee). Requester gets it for keeps or long-term, no return needed. Perfect for textbooks, notes, kits.
+            </div>
+          )}
           <div className="card" style={{ padding: "24px" }}>
             <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "18px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><i className="fa-regular fa-file-lines" style={{ marginRight: '6px' }}></i>Basic information</h3>
 
@@ -147,20 +172,48 @@ const ListResourcePage = () => {
             </div>
           </div>
 
-          <div className="card" style={{ padding: "24px", marginTop: "16px" }}>
-            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "18px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><i className="fa-solid fa-indian-rupee-sign" style={{ marginRight: '6px' }}></i>Pricing & deposit</h3>
+          <div className="card" style={{ padding: "24px", marginTop: "16px", opacity: form.listingType === "donate" ? 0.6 : 1, pointerEvents: form.listingType === "donate" ? "none" : "auto" }}>
+            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "18px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", justifyContent: "space-between" }}><span><i className="fa-solid fa-indian-rupee-sign" style={{ marginRight: '6px' }}></i>Pricing & deposit</span>{form.listingType === "donate" && <span style={{ background: "var(--success)", color: "white", padding: "2px 8px", borderRadius: 999, fontSize: 10 }}><i className="fa-solid fa-gift"></i> FREE for donate</span>}</h3>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-              <div className="form-group"><label className="form-label">Hourly rate (₹)</label><input type="number" name="hourlyRate" className="form-input" placeholder="0" value={form.hourlyRate} onChange={handleChange} /></div>
-              <div className="form-group"><label className="form-label">Daily rate (₹) *</label><input type="number" name="dailyRate" className="form-input" placeholder="0" value={form.dailyRate} onChange={handleChange} required /></div>
-              <div className="form-group"><label className="form-label">Minimum charge (₹)</label><input type="number" name="minCharge" className="form-input" placeholder="0" value={form.minCharge} onChange={handleChange} /></div>
-              <div className="form-group"><label className="form-label">Security deposit (₹) *</label><input type="number" name="securityDeposit" className="form-input" placeholder="0" value={form.securityDeposit} onChange={handleChange} required /></div>
+              <div className="form-group"><label className="form-label">Hourly rate (₹)</label><input type="number" name="hourlyRate" className="form-input" placeholder="0" value={form.listingType === "donate" ? 0 : form.hourlyRate} onChange={handleChange} disabled={form.listingType === "donate"} /></div>
+              <div className="form-group"><label className="form-label">Daily rate (₹) *</label><input type="number" name="dailyRate" className="form-input" placeholder="0" value={form.listingType === "donate" ? 0 : form.dailyRate} onChange={handleChange} required={form.listingType !== "donate"} disabled={form.listingType === "donate"} /></div>
+              <div className="form-group"><label className="form-label">Minimum charge (₹)</label><input type="number" name="minCharge" className="form-input" placeholder="0" value={form.listingType === "donate" ? 0 : form.minCharge} onChange={handleChange} disabled={form.listingType === "donate"} /></div>
+              <div className="form-group"><label className="form-label">Security deposit (₹) *</label><input type="number" name="securityDeposit" className="form-input" placeholder="0" value={form.listingType === "donate" ? 0 : form.securityDeposit} onChange={handleChange} required={form.listingType !== "donate"} disabled={form.listingType === "donate"} /></div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Platform fee (%)</label>
-              <input type="number" name="platformFeePercent" className="form-input" value={form.platformFeePercent} onChange={handleChange} min="0" max="20" />
-              <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>Default 5% — shown transparently as Borrowing + Platform fee + Deposit.</p>
+              <input type="number" name="platformFeePercent" className="form-input" value={form.listingType === "donate" ? 0 : form.platformFeePercent} onChange={handleChange} min="0" max="20" disabled={form.listingType === "donate"} />
+              <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>{form.listingType === "donate" ? "No fees for donations — 100% free, no deposit, no platform fee." : "Default 5% — shown transparently as Borrowing + Platform fee + Deposit."}</p>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Deposit type</label>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                {[
+                  { v: "refundable", l: "Refundable", d: "Full back on return", icon: "fa-solid fa-rotate-left" },
+                  { v: "non-refundable", l: "Non-refundable", d: "Fee kept", icon: "fa-solid fa-ban" },
+                  { v: "partial", l: "Partial", d: "Split", icon: "fa-solid fa-scale-balanced" },
+                ].map(o => (
+                  <button key={o.v} type="button" onClick={() => setForm({ ...form, depositType: o.v })} className={`btn btn-sm ${form.depositType===o.v ? "btn-primary" : "btn-ghost"}`} style={{ flex: 1, borderRadius: 999, flexDirection: "column", padding: "8px", height: 62, border: form.depositType===o.v ? "1px solid var(--primary)" : "1px solid var(--border)" }}>
+                    <i className={o.icon} style={{ fontSize: 14 }}></i>
+                    <span style={{ fontSize: 11, fontWeight: 600 }}>{o.l}</span>
+                    <span style={{ fontSize: 9, color: form.depositType===o.v ? "white" : "var(--text-muted)" }}>{o.d}</span>
+                  </button>
+                ))}
+              </div>
+              {form.depositType === "partial" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                  <div><label className="form-label" style={{ fontSize: 10 }}>Refundable part (₹)</label><input type="number" name="depositRefundable" className="form-input" placeholder="e.g., 100" value={form.depositRefundable} onChange={handleChange} /></div>
+                  <div><label className="form-label" style={{ fontSize: 10 }}>Non-refundable fee (₹)</label><input type="number" name="depositNonRefundable" className="form-input" placeholder="e.g., 50" value={form.depositNonRefundable} onChange={handleChange} /></div>
+                </div>
+              )}
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                {form.depositType==="refundable" && <><i className="fa-solid fa-circle-info"></i> Full deposit returned if no damage/late. Shown as <b>Refundable</b> in agreement.</>}
+                {form.depositType==="non-refundable" && <><i className="fa-solid fa-circle-info"></i> Deposit is a <b>non-refundable fee</b> — not returned. Good for low-risk cheap items.</>}
+                {form.depositType==="partial" && <><i className="fa-solid fa-circle-info"></i> Part refundable, part fee. Settlement splits accordingly.</>}
+              </p>
             </div>
 
             <div className="form-group">

@@ -175,13 +175,13 @@ const DiscoverPage = () => {
                   <div className="card-title">{resource.name}</div>
                   <div className="card-text" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{resource.description}</div>
                   <div className="resource-meta">
-                    <span className="resource-price">₹{resource.dailyRate}<span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>/day</span></span>
+                    {resource.listingType === "donate" ? <span className="resource-price" style={{ color: "#16A34A" }}><i className="fa-solid fa-gift"></i> FREE</span> : <span className="resource-price">₹{resource.dailyRate}<span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>/day</span></span>}
                     <span className="resource-rating"><i className="fa-solid fa-star"></i> {resource.rating}</span>
                   </div>
-                  <div className="resource-location"><i className="fa-solid fa-location-dot"></i> {resource.distance} away</div>
+                  <div className="resource-location"><i className="fa-solid fa-location-dot"></i> {resource.distance} away {resource.listingType==="donate" && <span className="badge" style={{ background: "#16A34A", color: "white", marginLeft: 6 }}><i className="fa-solid fa-gift"></i> Donate</span>}</div>
                   <div className="resource-owner">
                     <img src={getOwnerAvatar(resource.owner)} alt="owner" style={{ background: 'var(--bg-surface)' }} />
-                    <span>Deposit ₹{resource.securityDeposit}</span>
+                    <span>{resource.listingType==="donate" ? <span style={{ color: "#16A34A", fontWeight: 600 }}><i className="fa-solid fa-gift"></i> Free donation</span> : `Deposit ₹${resource.securityDeposit}`}</span>
                   </div>
                 </div>
               </motion.div>

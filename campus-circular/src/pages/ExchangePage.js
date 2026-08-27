@@ -6,7 +6,7 @@ import { useApp } from "../context/AppContext";
 const ExchangePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { allExchanges, allResources, allUsers, currentUser, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute } = useApp();
+  const { allExchanges, allResources, allUsers, currentUser, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, addExchangeConditionReport } = useApp();
   const getCardVisual = (resource) => {
     const byName = {
       "Canon EOS 1500D DSLR Camera": { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)" },
@@ -36,6 +36,10 @@ const ExchangePage = () => {
   };
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
+  const [showConditionModal, setShowConditionModal] = useState(false);
+  const [conditionType, setConditionType] = useState("before");
+  const [conditionForm, setConditionForm] = useState({ rating: 5, notes: "", checklist: {}, photos: [] });
+  const [conditionPhotos, setConditionPhotos] = useState([]);
 
   const exchange = allExchanges.find((e) => e.id === parseInt(id));
   if (!exchange) return <div className="page"><div className="empty-state"><div className="empty-icon"><i className="fa-solid fa-triangle-exclamation"></i></div><h3>Exchange not found</h3></div></div>;
@@ -250,7 +254,10 @@ const ExchangePage = () => {
           </div>
 
           <div className="card" style={{ padding: "18px" }}>
-            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><i className="fa-solid fa-camera"></i> Condition tracking</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h3 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><i className="fa-solid fa-camera"></i> Condition tracking</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => { setConditionType(exchange.status === "Returned" || exchange.status === "Inspection" ? "after" : "before"); setShowConditionModal(true); }} style={{ borderRadius: 999, fontSize: 11 }}><i className="fa-solid fa-clipboard-check"></i> Report condition</button>
+            </div>
             <div className="condition-comparison">
               <div className="condition-column">
                 <h4><i className="fa-regular fa-image" style={{ marginRight: '6px' }}></i>Before lending</h4>
@@ -265,6 +272,43 @@ const ExchangePage = () => {
                 )) : <div style={{ color: "var(--text-muted)", fontSize: "13px", padding: "16px", textAlign: "center", background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}><i className="fa-regular fa-clock"></i> Not yet returned</div>}
               </div>
             </div>
+          </div>
+
+          {/* Separate Condition Reports */}
+          <div className="card" style={{ padding: "18px", marginTop: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-flag" style={{ color: "var(--warning)" }}></i> Condition reports — separate</h3>
+              <span style={{ fontSize: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", padding: "4px 8px", borderRadius: 999, color: "var(--text-muted)" }}>{(exchange.conditionReports||[]).length} reports</span>
+            </div>
+            {(exchange.conditionReports||[]).length === 0 ? (
+              <div style={{ padding: 12, background: "var(--bg-surface)", border: "1px dashed var(--border)", borderRadius: 10, textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>
+                <i className="fa-solid fa-clipboard-question" style={{ fontSize: 14, marginBottom: 6, display: "block" }}></i>
+                No separate reports yet. Use <b>Report condition</b> to add before/after photos, checklist, and rating — stored separately from the basic before/after.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {exchange.conditionReports.map(r => {
+                  const user = allUsers.find(u=>u.id===r.by);
+                  return (
+                    <div key={r.id} style={{ padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10, display: "flex", gap: 10 }}>
+                      <img src={user?.avatar} alt={user?.name} style={{ width: 28, height: 28, borderRadius: "50%" }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
+                          <span className={`badge ${r.type==="before" ? "badge-primary" : "badge-warning"}`} style={{ fontSize: 10 }}>{r.type}</span>
+                          <span>{user?.name}</span>
+                          <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: 11 }}>{r.at}</span>
+                          <span style={{ marginLeft: "auto", color: "var(--warning)" }}><i className="fa-solid fa-star"></i> {r.rating}/5</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{r.notes || "No notes"}</div>
+                        {r.photos?.length > 0 && <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>{r.photos.map((p,i)=><img key={i} src={p} alt="condition" style={{ width: 54, height: 54, borderRadius: 6, objectFit: "cover", border: "1px solid var(--border)" }} />)}</div>}
+                        {r.checklist && <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>{Object.entries(r.checklist).map(([k,v])=><span key={k} className="badge badge-neutral" style={{ fontSize: 10 }}>{k}: <b style={{ color: v==="Good"||v==="Excellent" ? "var(--success)" : "var(--danger)" }}>{v}</b></span>)}</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button className="btn btn-ghost btn-sm" onClick={() => { setConditionType("before"); setShowConditionModal(true); }} style={{ width: "100%", marginTop: 10, borderRadius: 999, border: "1px dashed var(--border)", justifyContent: "center" }}><i className="fa-solid fa-plus"></i> Add separate condition report</button>
           </div>
         </div>
 
@@ -364,6 +408,75 @@ const ExchangePage = () => {
               <div className="modal-footer">
                 <button className="btn btn-ghost" onClick={() => setShowDisputeModal(false)}>Cancel</button>
                 <button className="btn btn-danger" onClick={handleRaiseDispute}><i className="fa-solid fa-paper-plane"></i> Submit</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showConditionModal && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowConditionModal(false)}>
+            <motion.div className="modal" initial={{ scale: 0.97, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 8 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+              <div className="modal-header">
+                <h3 className="modal-title"><i className="fa-solid fa-clipboard-check" style={{ color: "var(--primary)", marginRight: 6 }}></i>Report condition — separate</h3>
+                <button className="modal-close" onClick={() => setShowConditionModal(false)}><i className="fa-solid fa-xmark"></i></button>
+              </div>
+              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {["before","after"].map(t => (
+                    <button key={t} type="button" onClick={() => setConditionType(t)} className={`btn btn-sm ${conditionType===t ? "btn-primary" : "btn-ghost"}`} style={{ flex: 1, borderRadius: 999, border: conditionType===t ? "1px solid var(--primary)" : "1px solid var(--border)" }}><i className={`fa-solid ${t==="before" ? "fa-camera" : "fa-rotate-left"}`}></i> {t}</button>
+                  ))}
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Rating (1-5)</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" onClick={() => setConditionForm({ ...conditionForm, rating: n })} style={{ flex: 1, padding: "8px", borderRadius: 8, border: conditionForm.rating===n ? "2px solid var(--primary)" : "1px solid var(--border)", background: conditionForm.rating===n ? "var(--primary-soft)" : "var(--bg-surface)", color: conditionForm.rating===n ? "var(--primary)" : "var(--text-muted)" }}><i className="fa-solid fa-star"></i> {n}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Checklist (example: body, lens, screen)</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {Object.keys(exchange.conditionBefore || { body: "", lens: "", screen: "" }).map(k => (
+                      <div key={k} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "capitalize", minWidth: 50 }}>{k}</span>
+                        <select value={conditionForm.checklist[k] || "Good"} onChange={e => setConditionForm({ ...conditionForm, checklist: { ...conditionForm.checklist, [k]: e.target.value } })} className="form-select" style={{ padding: "6px 8px", fontSize: 12 }}>
+                          <option>Excellent</option><option>Good</option><option>Fair</option><option>Damaged</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Photos (separate report)</label>
+                  <label className="btn btn-secondary btn-sm" style={{ borderRadius: 999, cursor: "pointer", width: "fit-content" }}>
+                    <i className="fa-solid fa-upload"></i> Upload photos
+                    <input type="file" accept="image/*" multiple onChange={e => {
+                      const files = Array.from(e.target.files || []);
+                      files.slice(0,3).forEach(f => {
+                        const r = new FileReader();
+                        r.onloadend = () => setConditionPhotos(prev => [...prev, r.result].slice(0,3));
+                        r.readAsDataURL(f);
+                      });
+                    }} style={{ display: "none" }} />
+                  </label>
+                  {conditionPhotos.length > 0 && <div style={{ display: "flex", gap: 6, marginTop: 8 }}>{conditionPhotos.map((p,i)=><div key={i} style={{ position: "relative" }}><img src={p} alt="preview" style={{ width: 60, height: 60, borderRadius: 8, objectFit: "cover", border: "1px solid var(--border)" }} /><button type="button" onClick={() => setConditionPhotos(prev => prev.filter((_,idx)=>idx!==i))} style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--danger)", color: "white", border: "none", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}><i className="fa-solid fa-xmark"></i></button></div>)}</div>}
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Notes</label>
+                  <textarea className="form-textarea" placeholder={conditionType==="before" ? "Describe condition before handover..." : "Describe condition after return, any damage?"} value={conditionForm.notes} onChange={e => setConditionForm({ ...conditionForm, notes: e.target.value })} style={{ minHeight: 70 }} />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-ghost" onClick={() => setShowConditionModal(false)}>Cancel</button>
+                <button className="btn btn-primary" onClick={() => {
+                  addExchangeConditionReport(exchange.id, { type: conditionType, rating: conditionForm.rating, notes: conditionForm.notes, checklist: conditionForm.checklist, photos: conditionPhotos });
+                  setShowConditionModal(false);
+                  setConditionForm({ rating: 5, notes: "", checklist: {} });
+                  setConditionPhotos([]);
+                }}><i className="fa-solid fa-check"></i> Submit separate report</button>
               </div>
             </motion.div>
           </motion.div>

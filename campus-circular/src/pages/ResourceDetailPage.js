@@ -70,10 +70,11 @@ const ResourceDetailPage = () => {
             <div style={{ position: "relative", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: "20px", border: '1px solid var(--border)', height: "420px", background: resource.images?.[0]?.startsWith("data:") ? `url(${resource.images[0]}) center/cover no-repeat` : getCardVisual(resource).bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {!resource.images?.[0]?.startsWith("data:") && <i className={getCardVisual(resource).icon} style={{ fontSize: 96, color: "white", opacity: 0.92 }}></i>}
               {resource.images?.[0]?.startsWith("data:") && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent 60%)" }} />}
-              <div style={{ position: "absolute", top: "14px", left: "14px", display: "flex", gap: "8px" }}>
+              <div style={{ position: "absolute", top: "14px", left: "14px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <span className="badge badge-neutral" style={{ background: 'rgba(15,14,13,0.8)', backdropFilter: 'blur(8px)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
                 <span className="badge badge-primary">{resource.condition}</span>
-                {resource.images?.[0]?.startsWith("data:") && <span className="badge" style={{ background: "var(--success)", color: "white" }}><i className="fa-solid fa-image"></i> Uploaded photo</span>}
+                {resource.listingType === "donate" && <span className="badge" style={{ background: "#16A34A", color: "white", borderColor: "#16A34A" }}><i className="fa-solid fa-gift"></i> Donate • FREE</span>}
+                {resource.images?.[0]?.startsWith("data:") && <span className="badge" style={{ background: "var(--success)", color: "white" }}><i className="fa-solid fa-image"></i> Photo</span>}
               </div>
               <div style={{ position: "absolute", top: "14px", right: "14px", padding: "6px 12px", borderRadius: "999px", background: resource.availability === "Available" ? "var(--success)" : "var(--danger)", color: "white", fontSize: "12px", fontWeight: "600", display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className={`fa-solid ${resource.availability === "Available" ? "fa-circle-check" : "fa-circle-xmark"}`} style={{ fontSize: '11px' }}></i> {resource.availability}
@@ -125,58 +126,82 @@ const ResourceDetailPage = () => {
         <div>
           <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} style={{ position: "sticky", top: "84px" }}>
             <div className="card" style={{ padding: "20px", marginBottom: "14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
-                <div>
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>
-                    ₹{resource.dailyRate}<span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-muted)" }}>/day</span>
+              {resource.listingType === "donate" ? (
+                <div style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.18)", borderRadius: "var(--radius-sm)", padding: "12px", marginBottom: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#16A34A", fontFamily: "DM Serif Display, serif" }}><i className="fa-solid fa-gift"></i> FREE • Donation</div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>No charges, no deposit, no fees — just claim and collect.</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+                    <div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>
+                        ₹{resource.dailyRate}<span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-muted)" }}>/day</span>
+                      </div>
+                      {resource.hourlyRate > 0 && <div style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.hourlyRate}/hour</div>}
+                    </div>
+                    <div className="resource-rating" style={{ fontSize: "13px" }}><i className="fa-solid fa-star"></i> {resource.rating}</div>
                   </div>
-                  {resource.hourlyRate > 0 && <div style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.hourlyRate}/hour</div>}
+
+              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px', marginBottom: "16px", display: 'flex', justifyContent: 'space-between', fontSize: '12px', flexWrap: "wrap", gap: 8 }}>
+                <span style={{ display: "flex", gap: 6, alignItems: "center" }}><span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-lock"></i> Deposit</span><span style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit}</span><span className={`badge ${resource.depositType==="refundable" ? "badge-success" : resource.depositType==="non-refundable" ? "badge-danger" : "badge-warning"}`} style={{ fontSize: 10 }}><i className={`fa-solid ${resource.depositType==="refundable" ? "fa-rotate-left" : resource.depositType==="non-refundable" ? "fa-ban" : "fa-scale-balanced"}`}></i> {resource.depositType || "refundable"}</span></span>
+                <span style={{ display: "flex", gap: 6, alignItems: "center" }}><span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-percent"></i> Fee</span><span style={{ fontWeight: 600 }}>{resource.platformFeePercent}%</span></span>
+              </div>
+              {resource.depositType && (
+                <div style={{ fontSize: 11, color: resource.depositType==="refundable" ? "var(--success)" : resource.depositType==="non-refundable" ? "var(--danger)" : "var(--warning)", background: resource.depositType==="refundable" ? "rgba(22,163,74,0.08)" : resource.depositType==="non-refundable" ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)", border: `1px solid ${resource.depositType==="refundable" ? "rgba(22,163,74,0.18)" : resource.depositType==="non-refundable" ? "rgba(239,68,68,0.18)" : "rgba(245,158,11,0.18)"}`, borderRadius: 8, padding: "8px 10px", marginBottom: 12 }}>
+                  {resource.depositType==="refundable" && <><i className="fa-solid fa-circle-check"></i> <b>Refundable</b> — full ₹{resource.securityDeposit} returned on safe return (minus late/damage).</>}
+                  {resource.depositType==="non-refundable" && <><i className="fa-solid fa-ban"></i> <b>Non-refundable</b> — ₹{resource.securityDeposit} is a fee, not returned. Choose only for low-risk items.</>}
+                  {resource.depositType==="partial" && <><i className="fa-solid fa-scale-balanced"></i> <b>Partial</b> — ₹{resource.depositRefundable || Math.floor(resource.securityDeposit*0.6)} refundable + ₹{resource.depositNonRefundable || (resource.securityDeposit - (resource.depositRefundable||0))} fee. Settlement splits accordingly.</>}
                 </div>
-                <div className="resource-rating" style={{ fontSize: "13px" }}><i className="fa-solid fa-star"></i> {resource.rating}</div>
-              </div>
+              )}
 
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px', marginBottom: "16px", display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-lock"></i> Deposit</span><span style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit}</span>
-                <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-percent"></i> Fee</span><span style={{ fontWeight: 600 }}>{resource.platformFeePercent}%</span>
-              </div>
-
-              <div style={{ marginBottom: "16px" }}>
-                <label className="form-label"><i className="fa-regular fa-clock"></i> Duration — {days} day(s)</label>
-                <input type="range" min="1" max="168" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} style={{ width: "100%", accentColor: 'var(--primary)', marginBottom: "6px" }} />
+                  <div style={{ marginBottom: "16px" }}>
+                    <label className="form-label"><i className="fa-regular fa-clock"></i> Duration — {days} day(s)</label>
+                <input type="range" min="1" max="720" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} style={{ width: "100%", accentColor: 'var(--primary)', marginBottom: "6px" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--text-muted)", fontFamily: 'JetBrains Mono, monospace' }}>
-                  <span>1h</span><span>7 days</span>
+                  <span>1h</span><span>30 days max</span>
                 </div>
-              </div>
+                {duration > 168 && <div style={{ fontSize: 10, color: "var(--warning)", marginTop: 4, textAlign: "center" }}><i className="fa-solid fa-triangle-exclamation"></i> Long borrow — up to 30 days allowed</div>}
+                  </div>
 
-              <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-sm)", padding: "14px", marginBottom: "16px", border: '1px solid var(--border)' }}>
-                <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Borrowing</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{borrowingCharge}</span></div>
-                <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Platform fee</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{platformFee}</span></div>
-                <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Security deposit</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit}</span></div>
-                <div className="agreement-row" style={{ borderTop: "1px solid var(--border)", marginTop: "6px", paddingTop: "10px" }}>
-                  <span className="agreement-label" style={{ fontWeight: 600, color: "var(--text)" }}>Total</span>
-                  <span className="agreement-value agreement-total">₹{totalAmount}</span>
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>Deposit refundable on safe return</div>
-              </div>
+                  <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-sm)", padding: "14px", marginBottom: "16px", border: '1px solid var(--border)' }}>
+                    <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Borrowing</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{borrowingCharge}</span></div>
+                    <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Platform fee</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{platformFee}</span></div>
+                    <div className="agreement-row" style={{ padding: '8px 0' }}><span className="agreement-label">Security deposit</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit}</span></div>
+                    <div className="agreement-row" style={{ borderTop: "1px solid var(--border)", marginTop: "6px", paddingTop: "10px" }}>
+                      <span className="agreement-label" style={{ fontWeight: 600, color: "var(--text)" }}>Total</span>
+                      <span className="agreement-value agreement-total">₹{totalAmount}</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>Deposit refundable on safe return</div>
+                  </div>
+                </>
+              )}
 
               {isOwner ? (
                 <div style={{ background: "var(--primary-soft)", border: "1px solid rgba(22,163,74,0.18)", borderRadius: "var(--radius-sm)", padding: "14px", textAlign: "center" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--primary)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: 14 }}><i className="fa-solid fa-crown"></i></div>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>It's yours — your listing</div>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>You can't borrow your own item. Manage it from My Listings.</p>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>It's yours — your listing {resource.listingType==="donate" && "• Donation"}</div>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>You can't {resource.listingType==="donate" ? "claim" : "borrow"} your own item. Manage it from My Listings.</p>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                     <button className="btn btn-primary btn-sm" onClick={() => navigate("/my-listings")} style={{ borderRadius: 999 }}><i className="fa-solid fa-box"></i> My listings</button>
                     <button className="btn btn-secondary btn-sm" onClick={() => navigate("/profile")} style={{ borderRadius: 999 }}><i className="fa-regular fa-user"></i> Profile</button>
                   </div>
                   <div style={{ marginTop: 10, display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                    {resource.listingType==="donate" && <span className="badge" style={{ background: "#16A34A", color: "white" }}><i className="fa-solid fa-gift"></i> Donate • FREE</span>}
                     <span className={`badge ${resource.isPublic===false ? "badge-danger" : "badge-success"}`}><i className={`fa-solid ${resource.isPublic===false ? "fa-eye-slash" : "fa-eye"}`}></i> {resource.isPublic===false ? "Private" : "Public"}</span>
                     <span className={`badge ${resource.availability==="Available" ? "badge-success" : "badge-warning"}`}>{resource.availability}</span>
                   </div>
                 </div>
               ) : resource.availability === "Available" ? (
-                <button className="btn btn-primary btn-block btn-lg" onClick={() => setShowBorrowModal(true)}>
-                  <i className="fa-solid fa-handshake"></i> Request to borrow
-                </button>
+                resource.listingType === "donate" ? (
+                  <button className="btn btn-primary btn-block btn-lg" onClick={() => setShowBorrowModal(true)} style={{ background: "#16A34A", borderColor: "#16A34A" }}>
+                    <i className="fa-solid fa-gift"></i> Claim donation — FREE
+                  </button>
+                ) : (
+                  <button className="btn btn-primary btn-block btn-lg" onClick={() => setShowBorrowModal(true)}>
+                    <i className="fa-solid fa-handshake"></i> Request to borrow
+                  </button>
+                )
               ) : (
                 <button className="btn btn-secondary btn-block btn-lg" disabled>
                   <i className="fa-solid fa-ban"></i> Currently unavailable
@@ -184,7 +209,7 @@ const ResourceDetailPage = () => {
               )}
               {!isOwner && (
                 <p style={{ fontSize: '11px', color: 'var(--text-faint)', textAlign: 'center', marginTop: '10px' }}>
-                  <i className="fa-solid fa-shield-halved"></i> Protected by review & deposit
+                  <i className="fa-solid fa-shield-halved"></i> {resource.listingType==="donate" ? "Donation — no deposit, no fees" : "Protected by review & deposit"}
                 </p>
               )}
             </div>
@@ -246,15 +271,21 @@ const ResourceDetailPage = () => {
                   <div className="agreement-row"><span className="agreement-label">Condition</span><span className="agreement-value">{resource.condition}</span></div>
                   <div className="agreement-row"><span className="agreement-label">Borrowing charge</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{borrowingCharge}</span></div>
                   <div className="agreement-row"><span className="agreement-label">Platform fee</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{platformFee}</span></div>
-                  <div className="agreement-row"><span className="agreement-label">Security deposit</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit}</span></div>
+                  <div className="agreement-row"><span className="agreement-label">Security deposit</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{resource.securityDeposit} {resource.depositType && <span className={`badge ${resource.depositType==="refundable" ? "badge-success" : resource.depositType==="non-refundable" ? "badge-danger" : "badge-warning"}`} style={{ marginLeft: 6, fontSize: 10 }}>{resource.depositType}</span>}</span></div>
+                  {resource.depositType==="partial" && <div className="agreement-row"><span className="agreement-label" style={{ fontSize: 11, color: "var(--text-muted)" }}>Split</span><span className="agreement-value" style={{ fontSize: 12 }}>₹{resource.depositRefundable || Math.floor(resource.securityDeposit*0.6)} refundable + ₹{resource.depositNonRefundable || (resource.securityDeposit - (resource.depositRefundable||0))} fee</span></div>}
                   <div className="agreement-row" style={{ borderTop: "1px solid var(--border)", marginTop: "6px", paddingTop: "12px" }}>
                     <span className="agreement-label" style={{ fontWeight: 600, color: "var(--text)" }}>Total due now</span>
                     <span className="agreement-value agreement-total">₹{totalAmount}</span>
                   </div>
+                  <div style={{ fontSize: 11, color: resource.depositType==="refundable" ? "var(--success)" : resource.depositType==="non-refundable" ? "var(--danger)" : "var(--text-muted)", marginTop: 6, textAlign: "center", background: resource.depositType==="refundable" ? "rgba(22,163,74,0.08)" : resource.depositType==="non-refundable" ? "rgba(239,68,68,0.08)" : "transparent", padding: resource.depositType ? "6px" : 0, borderRadius: 6 }}>
+                    {resource.depositType==="refundable" && "Refundable — returned on safe return."}
+                    {resource.depositType==="non-refundable" && "Non-refundable — fee kept by owner."}
+                    {resource.depositType==="partial" && "Partial — part refunded, part kept as fee."}
+                  </div>
                 </div>
                 <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "14px", lineHeight: "1.6" }}>
                   <i className="fa-solid fa-circle-info" style={{ color: 'var(--primary)', marginRight: '4px' }}></i>
-                  By confirming, you agree to return the item in the same condition by the deadline. Late returns incur fees. Damage is assessed against your deposit.
+                  By confirming, you agree to return the item in the same condition by the deadline. Late returns incur fees. Damage is assessed against your {resource.depositType==="refundable" ? "refundable deposit" : resource.depositType==="non-refundable" ? "fee" : "deposit"}.
                 </p>
               </div>
               <div className="modal-footer">

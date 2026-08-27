@@ -169,7 +169,6 @@ export const AppProvider = ({ children }) => {
   const flagResource = (resourceId) => setAllResources(prev => prev.map((r) => (r.id === resourceId ? { ...r, isFlagged: true } : r)));
   const suspendUser = (userId) => setAllUsers(prev => prev.map((u) => (u.id === userId ? { ...u, isSuspended: !u.isSuspended } : u)));
   const deleteResource = (resourceId) => {
-    // also clean pending and exchanges for that resource if owner deletes
     setAllResources(prev => prev.filter(r => r.id !== resourceId));
     setAllExchanges(prev => prev.filter(e => e.resourceId !== resourceId));
     setPendingList(prev => prev.filter(p => p.id !== resourceId));
@@ -177,6 +176,17 @@ export const AppProvider = ({ children }) => {
   const toggleAvailability = (resourceId) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, availability: r.availability === "Available" ? "Borrowed" : "Available" } : r));
   const togglePublic = (resourceId) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, isPublic: !r.isPublic } : r));
   const updateResource = (resourceId, updates) => setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, ...updates } : r));
+  const addConditionReport = (resourceId, report) => {
+    const entry = { ...report, id: Date.now(), by: currentUser.id, at: nowStamp(), byName: currentUser.name };
+    setAllResources(prev => prev.map(r => r.id === resourceId ? { ...r, conditionReports: [...(r.conditionReports||[]), entry] } : r));
+    // also add to exchange if active borrowing exists for that resource
+    const active = allExchanges.find(e => e.resourceId === resourceId && ["Borrowed","Return Due","Requested","Accepted","Handover"].includes(e.status));
+    if (active) setAllExchanges(prev => prev.map(e => e.id===active.id ? { ...e, conditionReports: [...(e.conditionReports||[]), entry] } : e));
+  };
+  const addExchangeConditionReport = (exchangeId, report) => {
+    const entry = { ...report, id: Date.now(), by: currentUser.id, at: nowStamp(), byName: currentUser.name };
+    setAllExchanges(prev => prev.map(e => e.id===exchangeId ? { ...e, conditionReports: [...(e.conditionReports||[]), entry], conditionAfter: report.checklist || e.conditionAfter } : e));
+  };
 
   const revokeExchange = (exchangeId) => {
     const ex = allExchanges.find(e => e.id === exchangeId);
@@ -215,24 +225,26 @@ export const AppProvider = ({ children }) => {
     const resource = allResources.find((r) => r.id === resourceId);
     if (!resource) return null;
     if (resource.owner === currentUser.id) return null;
-    const days = Math.ceil(duration / 24) || 1;
-    const borrowingCharge = resource.dailyRate * days;
-    const platformFee = Math.round(borrowingCharge * (resource.platformFeePercent / 100));
-    const totalAmount = borrowingCharge + platformFee + resource.securityDeposit;
+    const isDonate = resource.listingType === "donate";
+    const days = isDonate ? 0 : Math.ceil(duration / 24) || 1;
+    const borrowingCharge = isDonate ? 0 : resource.dailyRate * days;
+    const platformFee = isDonate ? 0 : Math.round(borrowingCharge * (resource.platformFeePercent / 100));
+    const totalAmount = isDonate ? 0 : borrowingCharge + platformFee + resource.securityDeposit;
     const newId = Math.max(0, ...allExchanges.map(e=>e.id)) + 1;
     const start = startDate || new Date().toISOString().split("T")[0];
-    const end = new Date(Date.now() + duration * 60 * 60 * 1000).toISOString().split("T")[0];
+    const end = isDonate ? start : new Date(Date.now() + duration * 60 * 60 * 1000).toISOString().split("T")[0];
     const newExchange = {
       id: newId, resourceId, borrowerId: currentUser.id, ownerId: resource.owner, status: "Requested",
       startDate: start, endDate: end,
-      returnDate: null, hourlyRate: resource.hourlyRate, dailyRate: resource.dailyRate, totalDays: days, borrowingCharge, platformFee, securityDeposit: resource.securityDeposit, totalAmount, lateFee: 0, damageDeduction: 0, conditionBefore: resource.conditionBefore, conditionAfter: null, agreement: false, dispute: null,
+      returnDate: null, hourlyRate: isDonate?0:resource.hourlyRate, dailyRate: isDonate?0:resource.dailyRate, totalDays: days, borrowingCharge, platformFee, securityDeposit: isDonate?0:resource.securityDeposit, totalAmount, lateFee: 0, damageDeduction: 0, conditionBefore: resource.conditionBefore, conditionAfter: null, agreement: false, dispute: null,
+      isDonate,
       timeline: [{ status: "Requested", at: nowStamp(), by: currentUser.id }],
     };
     setAllExchanges(prev => [...prev, newExchange]);
     setActiveExchanges(prev => [...prev, newExchange.id]);
     const owner = allUsers.find(u=>u.id===resource.owner);
     const borrower = currentUser;
-    const notif = { id: Date.now(), userId: owner.id, type: "request", exchangeId: newId, resourceId, message: `${borrower.name} requested "${resource.name}" — due ${end} (owner set)`, time: "just now", read: false };
+    const notif = { id: Date.now(), userId: owner.id, type: "request", exchangeId: newId, resourceId, message: `${borrower.name} ${isDonate ? "wants your donation" : "requested"} "${resource.name}"${isDonate ? " — FREE" : ` — due ${end}`}`, time: "just now", read: false };
     setAllNotifications(prev => [notif, ...prev]);
     return newExchange;
   };
@@ -240,18 +252,28 @@ export const AppProvider = ({ children }) => {
   const confirmAgreement = (exchangeId) => setAllExchanges(prev => prev.map((e) => {
     if (e.id !== exchangeId) return e;
     const tl = [...(e.timeline||[]), { status: "Accepted", at: nowStamp(), by: currentUser.id }];
+    // For donate, auto-jump to Donated after accept
+    if (e.isDonate) {
+      const tl2 = [...tl, { status: "Donated", at: nowStamp(), by: currentUser.id }];
+      return { ...e, agreement: true, status: "Donated", timeline: tl2 };
+    }
     return { ...e, agreement: true, status: "Accepted", timeline: tl };
   }));
   const updateExchangeStatus = (exchangeId, status) => {
     setAllExchanges(prev => prev.map((e) => {
       if (e.id !== exchangeId) return e;
-      const tl = [...(e.timeline||[]), { status, at: nowStamp(), by: currentUser.id }];
-      return { ...e, status, returnDate: status === "Returned" ? new Date().toISOString().split("T")[0] : e.returnDate, timeline: tl };
+      // Donate flow: Requested -> Accepted -> Donated -> Completed
+      let finalStatus = status;
+      if (e.isDonate && status === "Handover") finalStatus = "Donated";
+      if (e.isDonate && status === "Borrowed") finalStatus = "Donated";
+      const tl = [...(e.timeline||[]), { status: finalStatus, at: nowStamp(), by: currentUser.id }];
+      // Donated is terminal for donate (like Rated for borrow)
+      return { ...e, status: finalStatus, returnDate: finalStatus === "Returned" || finalStatus === "Donated" ? new Date().toISOString().split("T")[0] : e.returnDate, timeline: tl };
     }));
     const ex = allExchanges.find(e=>e.id===exchangeId);
     if (ex) {
       const otherId = currentUser.id === ex.borrowerId ? ex.ownerId : ex.borrowerId;
-      const notif = { id: Date.now()+1, userId: otherId, type: "update", exchangeId, message: `Exchange #${exchangeId} is now ${status}${status==="Rated"?" — Completed":""} • due ${ex.endDate}`, time: "just now", read: false };
+      const notif = { id: Date.now()+1, userId: otherId, type: "update", exchangeId, message: `Exchange #${exchangeId} is now ${status}${status==="Rated"||status==="Donated"?" — Completed":""}${ex.isDonate?" (donation)":" • due "+ex.endDate}`, time: "just now", read: false };
       setAllNotifications(prev => [notif, ...prev]);
     }
   };
@@ -284,7 +306,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, stats, pendingList,
     searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters, cart, setCart, activeExchanges,
-    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, togglePublic, updateResource, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
+    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, deleteResource, toggleAvailability, togglePublic, updateResource, addConditionReport, addExchangeConditionReport, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
