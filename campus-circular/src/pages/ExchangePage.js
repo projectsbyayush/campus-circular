@@ -325,16 +325,79 @@ const ExchangePage = () => {
           </div>
 
           <div className="card" style={{ padding: "18px", marginBottom: "14px" }}>
-            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Settlement</h3>
+            <h3 style={{ fontSize: "12px", fontWeight: 600, marginBottom: "14px", letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Settlement • after item received</span>
+              <span style={{ fontSize: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", padding: "4px 8px", borderRadius: 999 }}>{exchange.isDonate ? "Donation • FREE" : "Borrow"}</span>
+            </h3>
             <div className="agreement-box" style={{ border: "none", padding: "0", background: 'transparent' }}>
               <div className="agreement-row"><span className="agreement-label">Borrowing</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.borrowingCharge}</span></div>
               <div className="agreement-row"><span className="agreement-label">Platform fee</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.platformFee}</span></div>
               <div className="agreement-row"><span className="agreement-label">Security deposit</span><span className="agreement-value" style={{ fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.securityDeposit}</span></div>
+              {/* Deposit handling — decided after item is received (inspection) */}
+              {exchange.status === "Inspection" || exchange.status === "Settlement" || exchange.status === "Returned" ? (
+                <div style={{ marginTop: 10, padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 8, display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-hand-holding-dollar" style={{ color: "var(--primary)" }}></i> Deposit handling — decided after item is received</div>
+                  {isOwner && (exchange.status === "Inspection" || exchange.status === "Settlement") ? (
+                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                      {[
+                        { v: "refundable", l: "Refundable", icon: "fa-rotate-left", c: "var(--success)" },
+                        { v: "non-refundable", l: "Non-refundable", icon: "fa-ban", c: "var(--danger)" },
+                        { v: "partial", l: "Partial", icon: "fa-scale-balanced", c: "var(--warning)" },
+                      ].map(o => (
+                        <button key={o.v} type="button" onClick={() => {
+                          const upd = { depositType: o.v };
+                          if (o.v === "refundable") { upd.depositRefundable = exchange.securityDeposit; upd.depositNonRefundable = 0; }
+                          if (o.v === "non-refundable") { upd.depositRefundable = 0; upd.depositNonRefundable = exchange.securityDeposit; }
+                          if (o.v === "partial") { upd.depositRefundable = Math.floor(exchange.securityDeposit*0.5); upd.depositNonRefundable = exchange.securityDeposit - Math.floor(exchange.securityDeposit*0.5); }
+                          // update exchange with chosen handling (persist via updateExchangeStatus won't do, so directly via updateResource-like)
+                          // Use a custom update: we store choice in exchange itself via local state + notify
+                          // For demo, just update via allExchanges directly through a helper (we'll use updateExchangeStatus with same status to trigger)
+                          // Instead, we mutate via a direct call to updateExchangeStatus with depositType in timeline note
+                          const cur = allExchanges.find(e=>e.id===exchange.id);
+                          if (cur) {
+                            cur.depositType = o.v;
+                            cur.depositRefundable = upd.depositRefundable;
+                            cur.depositNonRefundable = upd.depositNonRefundable;
+                            // force re-render by updating status to same (no-op) — we’ll just update via setAllExchanges through a custom event
+                            // For frontend-only, we update localStorage directly
+                            try {
+                              const arr = JSON.parse(localStorage.getItem("cc_exchanges")||"[]");
+                              const idx = arr.findIndex(x=>x.id===exchange.id);
+                              if (idx>=0) { arr[idx].depositType = o.v; arr[idx].depositRefundable = upd.depositRefundable; arr[idx].depositNonRefundable = upd.depositNonRefundable; localStorage.setItem("cc_exchanges", JSON.stringify(arr)); }
+                            } catch {}
+                            // trigger re-render by updating a dummy state — we’ll just reload
+                            window.location.reload();
+                          }
+                        }} style={{ flex: 1, padding: "8px", borderRadius: 8, border: (exchange.depositType||"refundable")===o.v ? "2px solid var(--primary)" : "1px solid var(--border)", background: (exchange.depositType||"refundable")===o.v ? "var(--primary-soft)" : "var(--bg-card)", color: (exchange.depositType||"refundable")===o.v ? "var(--primary)" : "var(--text-muted)", fontSize: 11, fontWeight: 600 }}>
+                          <i className={o.icon}></i> {o.l}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <span className={`badge ${exchange.depositType==="refundable" ? "badge-success" : exchange.depositType==="non-refundable" ? "badge-danger" : "badge-warning"}`}>
+                        <i className={`fa-solid ${exchange.depositType==="refundable" ? "fa-rotate-left" : exchange.depositType==="non-refundable" ? "fa-ban" : "fa-scale-balanced"}`}></i> {exchange.depositType || "refundable"} {isOwner ? "(you chose)" : ""}
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                        {exchange.depositType==="refundable" ? `Full ₹${exchange.securityDeposit} refundable` : exchange.depositType==="non-refundable" ? `₹${exchange.securityDeposit} kept as fee` : `₹${exchange.depositRefundable||Math.floor(exchange.securityDeposit*0.5)} refundable + ₹${exchange.depositNonRefundable||Math.ceil(exchange.securityDeposit*0.5)} fee`}
+                      </span>
+                    </div>
+                  )}
+                  <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>Owner decides after inspecting condition & late. Borrower sees live. Refund = deposit − late − damage − non-refundable part.</p>
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 8, textAlign: "center" }}>
+                  Deposit handling will appear after item is <b>Returned</b> — owner inspects then chooses refundable / non-refundable / partial.
+                </div>
+              )}
               {lateFee > 0 && <div className="agreement-row"><span className="agreement-label" style={{ color: "var(--danger)" }}><i className="fa-solid fa-triangle-exclamation"></i> Late fee</span><span className="agreement-value" style={{ color: "var(--danger)", fontFamily: 'JetBrains Mono, monospace' }}>₹{lateFee}</span></div>}
               {exchange.damageDeduction > 0 && <div className="agreement-row"><span className="agreement-label" style={{ color: "var(--danger)" }}>Damage</span><span className="agreement-value" style={{ color: "var(--danger)", fontFamily: 'JetBrains Mono, monospace' }}>₹{exchange.damageDeduction}</span></div>}
               <div className="agreement-row" style={{ borderTop: "1px solid var(--border)", marginTop: "6px", paddingTop: "10px" }}>
                 <span className="agreement-label" style={{ fontWeight: 600, color: "var(--text)" }}>Total</span>
                 <span className="agreement-value agreement-total">₹{exchange.totalAmount + lateFee + exchange.damageDeduction}</span>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6, textAlign: "center" }}>
+                Refund preview: <b style={{ color: "var(--success)" }}>₹{Math.max(0, (exchange.depositRefundable ?? exchange.securityDeposit) - lateFee - (exchange.damageDeduction||0))} refundable</b> {exchange.depositType==="partial" && `+ ₹${exchange.depositNonRefundable||0} fee kept`} {exchange.depositType==="non-refundable" && "(0 refundable)"}
               </div>
             </div>
           </div>

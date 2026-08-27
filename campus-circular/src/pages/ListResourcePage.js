@@ -8,7 +8,7 @@ import LocationPicker from "../components/LocationPicker";
 const ListResourcePage = () => {
   const navigate = useNavigate();
   const { addResource } = useApp();
-  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow", depositType: "refundable", depositRefundable: "", depositNonRefundable: "" });
+  const [form, setForm] = useState({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow" });
   const [imagePreview, setImagePreview] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -48,19 +48,14 @@ const ListResourcePage = () => {
     const distance = `${distKm.toFixed(1)} km`;
     const isDonate = form.listingType === "donate";
     const depTotal = isDonate ? 0 : parseInt(form.securityDeposit) || 0;
-    let depRefundable = 0, depNonRefund = 0;
-    if (!isDonate) {
-      if (form.depositType === "refundable") { depRefundable = depTotal; depNonRefund = 0; }
-      else if (form.depositType === "non-refundable") { depRefundable = 0; depNonRefund = depTotal; }
-      else { depRefundable = parseInt(form.depositRefundable) || Math.floor(depTotal*0.6); depNonRefund = parseInt(form.depositNonRefundable) || (depTotal - depRefundable); }
-    }
     const resource = {
       ...form,
       distance,
       listingType: isDonate ? "donate" : "borrow",
-      depositType: isDonate ? "refundable" : form.depositType,
-      depositRefundable: depRefundable,
-      depositNonRefundable: depNonRefund,
+      // deposit handling decided after item is received (inspection/settlement)
+      depositType: "pending",
+      depositRefundable: depTotal,
+      depositNonRefundable: 0,
       hourlyRate: isDonate ? 0 : parseInt(form.hourlyRate) || 0,
       dailyRate: isDonate ? 0 : parseInt(form.dailyRate) || 0,
       minCharge: isDonate ? 0 : parseInt(form.minCharge) || 0,
@@ -87,7 +82,7 @@ const ListResourcePage = () => {
           <p style={{ color: "var(--text-secondary)", marginBottom: "20px", fontSize: '14px', lineHeight: 1.6 }}>{form.listingType === "donate" ? "Your donation is live — other students (Tejas/Ayush) can now claim it for free. No deposit, no fees." : "Your resource is now live for Ayush ↔ Tejas. Other user can see it instantly in Discover."}</p>
           <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             <button className="btn btn-primary" onClick={() => navigate("/discover")}><i className="fa-solid fa-compass"></i> Browse resources</button>
-            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow", depositType: "refundable", depositRefundable: "", depositNonRefundable: "" }); setImagePreview(""); }}><i className="fa-solid fa-plus"></i> List another</button>
+            <button className="btn btn-secondary" onClick={() => { setSubmitted(false); setForm({ name: "", category: "", description: "", condition: "Good", location: "", coordinates: { lat: 28.5445, lng: 77.1925 }, hourlyRate: "", dailyRate: "", minCharge: "", securityDeposit: "", platformFeePercent: 5, accessories: "", images: "", listingType: "borrow" }); setImagePreview(""); }}><i className="fa-solid fa-plus"></i> List another</button>
           </div>
         </motion.div>
       </div>
@@ -189,37 +184,12 @@ const ListResourcePage = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Deposit type</label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                {[
-                  { v: "refundable", l: "Refundable", d: "Full back on return", icon: "fa-solid fa-rotate-left" },
-                  { v: "non-refundable", l: "Non-refundable", d: "Fee kept", icon: "fa-solid fa-ban" },
-                  { v: "partial", l: "Partial", d: "Split", icon: "fa-solid fa-scale-balanced" },
-                ].map(o => (
-                  <button key={o.v} type="button" onClick={() => setForm({ ...form, depositType: o.v })} className={`btn btn-sm ${form.depositType===o.v ? "btn-primary" : "btn-ghost"}`} style={{ flex: 1, borderRadius: 999, flexDirection: "column", padding: "8px", height: 62, border: form.depositType===o.v ? "1px solid var(--primary)" : "1px solid var(--border)" }}>
-                    <i className={o.icon} style={{ fontSize: 14 }}></i>
-                    <span style={{ fontSize: 11, fontWeight: 600 }}>{o.l}</span>
-                    <span style={{ fontSize: 9, color: form.depositType===o.v ? "white" : "var(--text-muted)" }}>{o.d}</span>
-                  </button>
-                ))}
-              </div>
-              {form.depositType === "partial" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-                  <div><label className="form-label" style={{ fontSize: 10 }}>Refundable part (₹)</label><input type="number" name="depositRefundable" className="form-input" placeholder="e.g., 100" value={form.depositRefundable} onChange={handleChange} /></div>
-                  <div><label className="form-label" style={{ fontSize: 10 }}>Non-refundable fee (₹)</label><input type="number" name="depositNonRefundable" className="form-input" placeholder="e.g., 50" value={form.depositNonRefundable} onChange={handleChange} /></div>
-                </div>
-              )}
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-                {form.depositType==="refundable" && <><i className="fa-solid fa-circle-info"></i> Full deposit returned if no damage/late. Shown as <b>Refundable</b> in agreement.</>}
-                {form.depositType==="non-refundable" && <><i className="fa-solid fa-circle-info"></i> Deposit is a <b>non-refundable fee</b> — not returned. Good for low-risk cheap items.</>}
-                {form.depositType==="partial" && <><i className="fa-solid fa-circle-info"></i> Part refundable, part fee. Settlement splits accordingly.</>}
-              </p>
-            </div>
-
-            <div className="form-group">
               <label className="form-label">Accessories (comma-separated)</label>
               <input type="text" name="accessories" className="form-input" placeholder="e.g., Charger, Bag, Extra Battery" value={form.accessories} onChange={handleChange} />
             </div>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", marginTop: 8 }}>
+              <i className="fa-solid fa-circle-info" style={{ color: "var(--primary)" }}></i> Security deposit handling (refundable / non-refundable) will be decided <b>after the item is received</b> during inspection & settlement — based on condition & late return.
+            </p>
           </div>
 
           <div style={{ marginTop: "18px", display: "flex", gap: "10px" }}>
