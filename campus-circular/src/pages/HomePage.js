@@ -50,6 +50,34 @@ const HomePage = () => {
     "Event",
   ];
 
+  const faqs = [
+    {
+      question: "How do I borrow an item?",
+      answer:
+        "Open Discover, choose an available resource, review the price and deposit, then send a request. Once the owner accepts, you can arrange pickup on campus.",
+    },
+    {
+      question: "Is the security deposit refundable?",
+      answer:
+        "Yes. The deposit is held for the exchange and returned after the item is handed back and its condition is confirmed, minus any agreed damage or late fees.",
+    },
+    {
+      question: "Can I list something for free?",
+      answer:
+        "Yes. Choose the Donate option when listing an item. Other students can request it without a borrowing charge or deposit.",
+    },
+    {
+      question: "How does AI Search help?",
+      answer:
+        "Describe what you need in everyday language, even with typos. AI Search looks across resource names, categories, and descriptions to find useful matches.",
+    },
+    {
+      question: "How do I know who I can trust?",
+      answer:
+        "Student profiles show verification, trust scores, ratings, successful exchanges, and exchange history so you can make informed decisions before pickup.",
+    },
+  ];
+
   const getCardVisual = (resource) => {
     const byName = {
       "Canon EOS 1500D DSLR Camera": {
@@ -150,6 +178,9 @@ const HomePage = () => {
           <div className="hero-orb hero-orb--3"></div>
           <div className="hero-grid"></div>
           <div className="hero-shimmer"></div>
+          <div className="hero-profile-bg">
+            <img src="/images/pravinpatil.jpg" alt="" />
+          </div>
         </div>
         <div className="hero-inner">
           <motion.div
@@ -1122,6 +1153,30 @@ const HomePage = () => {
                   "{t.text}"
                 </p>
               </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQs */}
+        <div className="faq-section">
+          <div className="faq-heading">
+            <h2>
+              Frequently asked <em>questions</em>
+            </h2>
+            <p>Quick answers about borrowing, sharing, deposits, and trust.</p>
+          </div>
+          <div className="faq-list">
+            {faqs.map((faq) => (
+              <details className="faq-item" key={faq.question}>
+                <summary>
+                  <span>{faq.question}</span>
+                  <i
+                    className="fa-solid fa-chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </summary>
+                <p>{faq.answer}</p>
+              </details>
             ))}
           </div>
         </div>

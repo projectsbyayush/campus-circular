@@ -1747,6 +1747,7 @@ export const resources = [
 ];
 
 const localItemImageRules = [
+  { terms: ["calculator"], image: "/images/calculator.jpeg" },
   {
     terms: [
       "mathematics",
