@@ -50,6 +50,33 @@ const RESOURCE_TAGS = {
   "Football - Official Size 5": ["football","soccer","footbal","football ball"],
   "Desk Lamp - LED Study Lamp": ["desk lamp","study lamp","reading lamp","table lamp"],
 };
+const getCardVisual = (resource) => {
+  const byName = {
+    "Canon EOS 1500D DSLR Camera": { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)" },
+    "Tripod Stand - Professional": { icon: "fa-solid fa-video", bg: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)" },
+    "Wireless Bluetooth Microphone": { icon: "fa-solid fa-microphone", bg: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)" },
+    "LED Ring Light 12 inch": { icon: "fa-solid fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)" },
+    "Engineering Mathematics Vol 1": { icon: "fa-solid fa-book-open", bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" },
+    "Cricket Bat - SG": { icon: "fa-solid fa-baseball-bat-ball", bg: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" },
+    "Yamaha Acoustic Guitar": { icon: "fa-solid fa-guitar", bg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" },
+    "Dell Laptop - i5 10th Gen": { icon: "fa-solid fa-laptop", bg: "linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)" },
+    "Football - Official Size 5": { icon: "fa-solid fa-futbol", bg: "linear-gradient(135deg, #10b981 0%, #22c55e 100%)" },
+    "Scientific Calculator - Casio fx-991EX": { icon: "fa-solid fa-calculator", bg: "linear-gradient(135deg, #6366f1 0%, #1e40af 100%)" },
+    "Bluetooth Speaker - JBL": { icon: "fa-solid fa-volume-high", bg: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" },
+    "Desk Lamp - LED Study Lamp": { icon: "fa-regular fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #eab308 100%)" },
+  };
+  if (byName[resource.name]) return byName[resource.name];
+  const catMap = {
+    Cameras: { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899, #8b5cf6)" },
+    Electronics: { icon: "fa-solid fa-microchip", bg: "linear-gradient(135deg, #6366f1, #06b6d4)" },
+    Textbooks: { icon: "fa-solid fa-book", bg: "linear-gradient(135deg, #f59e0b, #d97706)" },
+    Sports: { icon: "fa-solid fa-medal", bg: "linear-gradient(135deg, #10b981, #06b6d4)" },
+    Musical: { icon: "fa-solid fa-music", bg: "linear-gradient(135deg, #8b5cf6, #ec4899)" },
+    Event: { icon: "fa-solid fa-star", bg: "linear-gradient(135deg, #06b6d4, #8b5cf6)" },
+    Other: { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" },
+  };
+  return catMap[resource.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
+};
 
 function getRecommendations(query, allResources) {
   const rawTokens = tokenize(query);
@@ -182,11 +209,14 @@ const AiSearchPage = () => {
               <div className={`chat-bubble ${msg.role}`} style={{whiteSpace:'pre-line'}}>{msg.content}</div>
               {msg.resources && (
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:"10px",marginBottom:"12px",marginLeft:"6px"}}>
-                  {msg.resources.map(r=>(
+                  {msg.resources.map(r=>{
+                    const v = getCardVisual(r);
+                    return (
                     <motion.div key={r.id} className="card" style={{cursor:"pointer",overflow:"hidden"}} whileHover={{y:-2}} onClick={()=>navigate(`/resource/${r.id}`)}>
-                      <div style={{position:'relative'}}>
-                        <img src={r.images[0]} alt={r.name} style={{width:"100%",height:"108px",objectFit:"cover"}}/>
+                      <div style={{height:"108px", background: v.bg, display:"flex", alignItems:"center", justifyContent:"center", position:'relative'}}>
+                        <i className={v.icon} style={{fontSize:32, color:"white"}}></i>
                         <span className="badge badge-neutral" style={{position:'absolute',bottom:'7px',left:'7px',background:'rgba(15,14,13,0.84)',color:'white',borderColor:'rgba(255,255,255,0.12)',fontSize:'10px'}}>{r.category}</span>
+                        <span className="badge badge-neutral" style={{position:'absolute',top:'7px',right:'7px',background:'rgba(255,255,255,0.92)',color:'var(--text)', fontSize:'10px'}}><i className={v.icon} style={{fontSize:10}}></i></span>
                       </div>
                       <div style={{padding:"9px 10px"}}>
                         <div style={{fontWeight:600,fontSize:"12px",lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{r.name}</div>
@@ -200,7 +230,7 @@ const AiSearchPage = () => {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                  )})}
                 </div>
               )}
             </motion.div>

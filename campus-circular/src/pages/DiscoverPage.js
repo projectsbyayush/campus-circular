@@ -20,6 +20,33 @@ const DiscoverPage = () => {
   const { allResources, allUsers, currentUser, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters } = useApp();
   const navigate = useNavigate();
   const getOwnerAvatar = (ownerId) => allUsers.find(u => u.id === ownerId)?.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=user${ownerId}`;
+  const getCardVisual = (resource) => {
+    const byName = {
+      "Canon EOS 1500D DSLR Camera": { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)" },
+      "Tripod Stand - Professional": { icon: "fa-solid fa-video", bg: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)" },
+      "Wireless Bluetooth Microphone": { icon: "fa-solid fa-microphone", bg: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)" },
+      "LED Ring Light 12 inch": { icon: "fa-solid fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)" },
+      "Engineering Mathematics Vol 1": { icon: "fa-solid fa-book-open", bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" },
+      "Cricket Bat - SG": { icon: "fa-solid fa-baseball-bat-ball", bg: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" },
+      "Yamaha Acoustic Guitar": { icon: "fa-solid fa-guitar", bg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" },
+      "Dell Laptop - i5 10th Gen": { icon: "fa-solid fa-laptop", bg: "linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)" },
+      "Football - Official Size 5": { icon: "fa-solid fa-futbol", bg: "linear-gradient(135deg, #10b981 0%, #22c55e 100%)" },
+      "Scientific Calculator - Casio fx-991EX": { icon: "fa-solid fa-calculator", bg: "linear-gradient(135deg, #6366f1 0%, #1e40af 100%)" },
+      "Bluetooth Speaker - JBL": { icon: "fa-solid fa-volume-high", bg: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" },
+      "Desk Lamp - LED Study Lamp": { icon: "fa-regular fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #eab308 100%)" },
+    };
+    if (byName[resource.name]) return byName[resource.name];
+    const catMap = {
+      Cameras: { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899, #8b5cf6)" },
+      Electronics: { icon: "fa-solid fa-microchip", bg: "linear-gradient(135deg, #6366f1, #06b6d4)" },
+      Textbooks: { icon: "fa-solid fa-book", bg: "linear-gradient(135deg, #f59e0b, #d97706)" },
+      Sports: { icon: "fa-solid fa-medal", bg: "linear-gradient(135deg, #10b981, #06b6d4)" },
+      Musical: { icon: "fa-solid fa-music", bg: "linear-gradient(135deg, #8b5cf6, #ec4899)" },
+      Event: { icon: "fa-solid fa-star", bg: "linear-gradient(135deg, #06b6d4, #8b5cf6)" },
+      Other: { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" },
+    };
+    return catMap[resource.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
+  };
   const [view, setView] = useState("grid");
 
   const filteredResources = useMemo(() => {
@@ -126,14 +153,15 @@ const DiscoverPage = () => {
           {filteredResources.map((resource, i) => (
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card resource-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <div className="card-image-wrap" style={{ position: "relative" }}>
-                  <img src={resource.images[0]} alt={resource.name} className="card-image" />
+                <div style={{ height: '180px', background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <i className={getCardVisual(resource).icon} style={{ fontSize: '52px', color: 'white', opacity: 0.92 }}></i>
                   <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
                   <div style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "6px" }}>
                     <span className="badge badge-neutral" style={{ background: 'rgba(28,28,26,0.85)', backdropFilter: 'blur(8px)' }}>{resource.category}</span>
                     <span className="badge badge-primary">{resource.condition}</span>
                     {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
                   </div>
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '12px' }}><i className={getCardVisual(resource).icon}></i></div>
                 </div>
                 <div className="card-body">
                   <div className="card-title">{resource.name}</div>
@@ -157,7 +185,7 @@ const DiscoverPage = () => {
           {filteredResources.map((resource, i) => (
             <Link to={`/resource/${resource.id}`} key={resource.id} style={{ textDecoration: "none" }}>
               <motion.div className="card" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} style={{ display: "flex", overflow: "hidden" }}>
-                <img src={resource.images[0]} alt={resource.name} style={{ width: "180px", height: "140px", objectFit: "cover" }} />
+                <div style={{ width: "180px", height: "140px", background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={getCardVisual(resource).icon} style={{ fontSize: '36px', color: 'white' }}></i></div>
                 <div className="card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>

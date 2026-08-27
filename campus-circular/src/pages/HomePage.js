@@ -26,6 +26,34 @@ const HomePage = () => {
 
   const categories = ["All", "Cameras", "Electronics", "Textbooks", "Sports", "Musical", "Event"];
 
+  const getCardVisual = (resource) => {
+    const byName = {
+      "Canon EOS 1500D DSLR Camera": { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)" },
+      "Tripod Stand - Professional": { icon: "fa-solid fa-video", bg: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)" },
+      "Wireless Bluetooth Microphone": { icon: "fa-solid fa-microphone", bg: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)" },
+      "LED Ring Light 12 inch": { icon: "fa-solid fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)" },
+      "Engineering Mathematics Vol 1": { icon: "fa-solid fa-book-open", bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" },
+      "Cricket Bat - SG": { icon: "fa-solid fa-baseball-bat-ball", bg: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" },
+      "Yamaha Acoustic Guitar": { icon: "fa-solid fa-guitar", bg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" },
+      "Dell Laptop - i5 10th Gen": { icon: "fa-solid fa-laptop", bg: "linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)" },
+      "Football - Official Size 5": { icon: "fa-solid fa-futbol", bg: "linear-gradient(135deg, #10b981 0%, #22c55e 100%)" },
+      "Scientific Calculator - Casio fx-991EX": { icon: "fa-solid fa-calculator", bg: "linear-gradient(135deg, #6366f1 0%, #1e40af 100%)" },
+      "Bluetooth Speaker - JBL": { icon: "fa-solid fa-volume-high", bg: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" },
+      "Desk Lamp - LED Study Lamp": { icon: "fa-regular fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #eab308 100%)" },
+    };
+    if (byName[resource.name]) return byName[resource.name];
+    const catMap = {
+      Cameras: { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899, #8b5cf6)" },
+      Electronics: { icon: "fa-solid fa-microchip", bg: "linear-gradient(135deg, #6366f1, #06b6d4)" },
+      Textbooks: { icon: "fa-solid fa-book", bg: "linear-gradient(135deg, #f59e0b, #d97706)" },
+      Sports: { icon: "fa-solid fa-medal", bg: "linear-gradient(135deg, #10b981, #06b6d4)" },
+      Musical: { icon: "fa-solid fa-music", bg: "linear-gradient(135deg, #8b5cf6, #ec4899)" },
+      Event: { icon: "fa-solid fa-star", bg: "linear-gradient(135deg, #06b6d4, #8b5cf6)" },
+      Other: { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" },
+    };
+    return catMap[resource.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
+  };
+
   return (
     <div>
       {/* HERO */}
@@ -78,18 +106,21 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Hero preview strip - proper stuff */}
+            {/* Hero preview strip - Font Awesome icons */}
             <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto', textAlign: 'left' }}>
-              {allResources.filter(r=>r.isApproved).slice(0,3).map(r => (
-                <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', gap: '10px', padding: '10px', alignItems: 'center', boxShadow: 'var(--shadow-soft)' }}>
-                  <img src={r.images[0]} alt={r.name} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ').slice(0,2).join(' ')}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.category} • ₹{r.dailyRate}/day</div>
-                    <div style={{ fontSize: '10px', color: 'var(--warning)' }}><i className="fa-solid fa-star"></i> {r.rating} • <span style={{ color: 'var(--success)' }}><i className="fa-solid fa-circle-check"></i> {r.availability}</span></div>
+              {allResources.filter(r=>r.isApproved).slice(0,3).map(r => {
+                const v = getCardVisual(r);
+                return (
+                  <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', gap: '10px', padding: '10px', alignItems: 'center', boxShadow: 'var(--shadow-soft)' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><i className={v.icon}></i></div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ').slice(0,2).join(' ')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.category} • ₹{r.dailyRate}/day</div>
+                      <div style={{ fontSize: '10px', color: 'var(--warning)' }}><i className="fa-solid fa-star"></i> {r.rating} • <span style={{ color: 'var(--success)' }}><i className="fa-solid fa-circle-check"></i> {r.availability}</span></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         </div>
@@ -163,22 +194,24 @@ const HomePage = () => {
                 whileHover={{ y: -4 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div className="card-image-wrap" style={{ position: "relative" }}>
-                  <img src={resource.images[0]} alt={resource.name} className="card-image" style={{ height: '180px' }} />
+                <div style={{ height: '180px', background: getCardVisual(resource).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <i className={getCardVisual(resource).icon} style={{ fontSize: '56px', color: 'white', opacity: 0.92, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}></i>
                   <div className={`availability-dot ${resource.availability === "Available" ? "available" : "borrowed"}`} />
-                  <div style={{ position: "absolute", inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 45%)', pointerEvents: 'none' }} />
                   <div style={{ position: "absolute", bottom: "10px", left: "10px", right: '10px', display: "flex", gap: "6px", justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <span className="badge badge-neutral" style={{ backdropFilter: 'blur(8px)', background: 'rgba(28,28,26,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.12)' }}>{resource.category}</span>
                       <span className="badge badge-primary">{resource.condition}</span>
                       {resource.owner === currentUser.id && <span className="badge" style={{ background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }}><i className="fa-solid fa-crown"></i> Yours</span>}
                     </div>
-                    <span style={{ fontSize: '11px', color: 'white', background: 'rgba(0,0,0,0.45)', padding: '4px 8px', borderRadius: '999px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    <span style={{ fontSize: '11px', color: 'white', background: 'rgba(0,0,0,0.38)', padding: '4px 8px', borderRadius: '999px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}>
                       <i className="fa-solid fa-location-dot"></i> {resource.distance}
                     </span>
                   </div>
                   <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '999px', padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'flex', gap: '4px', alignItems: 'center', color: 'var(--warning)' }}>
                     <i className="fa-solid fa-star" style={{ fontSize: '10px' }}></i> {resource.rating}
+                  </div>
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '999px', padding: '4px 8px', color: 'white', fontSize: '11px' }}>
+                    <i className={getCardVisual(resource).icon}></i>
                   </div>
                 </div>
                 <div className="card-body" style={{ padding: '14px 14px 12px' }}>

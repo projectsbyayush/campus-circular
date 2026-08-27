@@ -7,6 +7,33 @@ import LocationPicker from "../components/LocationPicker";
 
 const MyListingsPage = () => {
   const { currentUser, allResources, allExchanges, deleteResource, toggleAvailability, togglePublic, updateResource } = useApp();
+  const getCardVisual = (resource) => {
+    const byName = {
+      "Canon EOS 1500D DSLR Camera": { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)" },
+      "Tripod Stand - Professional": { icon: "fa-solid fa-video", bg: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)" },
+      "Wireless Bluetooth Microphone": { icon: "fa-solid fa-microphone", bg: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)" },
+      "LED Ring Light 12 inch": { icon: "fa-solid fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #ec4899 100%)" },
+      "Engineering Mathematics Vol 1": { icon: "fa-solid fa-book-open", bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" },
+      "Cricket Bat - SG": { icon: "fa-solid fa-baseball-bat-ball", bg: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" },
+      "Yamaha Acoustic Guitar": { icon: "fa-solid fa-guitar", bg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" },
+      "Dell Laptop - i5 10th Gen": { icon: "fa-solid fa-laptop", bg: "linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)" },
+      "Football - Official Size 5": { icon: "fa-solid fa-futbol", bg: "linear-gradient(135deg, #10b981 0%, #22c55e 100%)" },
+      "Scientific Calculator - Casio fx-991EX": { icon: "fa-solid fa-calculator", bg: "linear-gradient(135deg, #6366f1 0%, #1e40af 100%)" },
+      "Bluetooth Speaker - JBL": { icon: "fa-solid fa-volume-high", bg: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" },
+      "Desk Lamp - LED Study Lamp": { icon: "fa-regular fa-lightbulb", bg: "linear-gradient(135deg, #f59e0b 0%, #eab308 100%)" },
+    };
+    if (byName[resource.name]) return byName[resource.name];
+    const catMap = {
+      Cameras: { icon: "fa-solid fa-camera", bg: "linear-gradient(135deg, #ec4899, #8b5cf6)" },
+      Electronics: { icon: "fa-solid fa-microchip", bg: "linear-gradient(135deg, #6366f1, #06b6d4)" },
+      Textbooks: { icon: "fa-solid fa-book", bg: "linear-gradient(135deg, #f59e0b, #d97706)" },
+      Sports: { icon: "fa-solid fa-medal", bg: "linear-gradient(135deg, #10b981, #06b6d4)" },
+      Musical: { icon: "fa-solid fa-music", bg: "linear-gradient(135deg, #8b5cf6, #ec4899)" },
+      Event: { icon: "fa-solid fa-star", bg: "linear-gradient(135deg, #06b6d4, #8b5cf6)" },
+      Other: { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" },
+    };
+    return catMap[resource.category] || { icon: "fa-solid fa-box", bg: "linear-gradient(135deg, #64748b, #475569)" };
+  };
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -90,7 +117,7 @@ const MyListingsPage = () => {
             return (
               <motion.div key={r.id} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} style={{ overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 320px", gap: 0 }}>
-                  <img src={r.images[0]} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 180 }} />
+                  <div style={{ background: getCardVisual(r).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}><i className={getCardVisual(r).icon} style={{ fontSize: 48, color: 'white' }}></i></div>
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <span className="badge badge-neutral">{r.category}</span>
