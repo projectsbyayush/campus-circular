@@ -4,6 +4,62 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "../context/AppContext";
 import LocationMap from "../components/LocationMap";
 
+const ReviewsSection = ({ resource }) => {
+  const { allReviews, currentUser, addReview, deleteReview, helpfulReview } = useApp();
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const reviews = allReviews.filter(r => r.resourceId === resource.id);
+  const isOwner = resource.owner === currentUser.id;
+  const handleAdd = () => {
+    if (!comment.trim()) return;
+    addReview(resource.id, { rating, comment });
+    setComment(""); setRating(5);
+  };
+  return (
+    <div className="card" style={{ padding: 18, marginTop: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <h3 style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", display: "flex", gap: 6, alignItems: "center" }}><i className="fa-solid fa-star" style={{ color: "#F59E0B" }}></i> Reviews • {reviews.length} <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text-muted)" }}>— live to admin</span></h3>
+        <span className="badge badge-neutral" style={{ fontFamily: "JetBrains Mono, monospace" }}><i className="fa-solid fa-star" style={{ color: "#F59E0B" }}></i> {resource.rating} avg</span>
+      </div>
+      {!isOwner && (
+        <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Add your review</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            {[1,2,3,4,5].map(n => (
+              <button key={n} type="button" onClick={() => setRating(n)} style={{ flex: 1, padding: "6px", borderRadius: 8, border: rating===n ? "2px solid var(--primary)" : "1px solid var(--border)", background: rating===n ? "var(--primary-soft)" : "var(--bg-card)", color: rating===n ? "var(--primary)" : "var(--text-muted)" }}><i className="fa-solid fa-star"></i> {n}</button>
+            ))}
+          </div>
+          <textarea className="form-textarea" placeholder="What was good? Condition, pickup, owner helpfulness..." value={comment} onChange={e => setComment(e.target.value)} style={{ minHeight: 70, marginBottom: 8 }} />
+          <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={!comment.trim()} style={{ borderRadius: 999 }}><i className="fa-solid fa-paper-plane"></i> Post review</button>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>Visible instantly on admin analytics</span>
+        </div>
+      )}
+      {isOwner && <p style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: "8px 10px", marginBottom: 12 }}><i className="fa-solid fa-circle-info"></i> You own this — others’ reviews appear here. You can’t review your own item.</p>}
+      {reviews.length === 0 ? (
+        <div style={{ padding: 12, background: "var(--bg-surface)", border: "1px dashed var(--border)", borderRadius: 10, textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>No reviews yet — be the first to review after borrowing.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 320, overflowY: "auto" }}>
+          {reviews.map(r => (
+            <div key={r.id} style={{ display: "flex", gap: 10, padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10 }}>
+              <img src={r.avatar} alt={r.userName} style={{ width: 32, height: 32, borderRadius: "50%" }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <b style={{ fontSize: 12 }}>{r.userName}</b>
+                  <span style={{ fontSize: 11, color: "#F59E0B" }}><i className="fa-solid fa-star"></i> {r.rating}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.at}</span>
+                  <button onClick={() => helpfulReview(r.id)} style={{ marginLeft: "auto", background: "none", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", fontSize: 11, cursor: "pointer" }}><i className="fa-regular fa-thumbs-up"></i> {r.helpful||0}</button>
+                  {(currentUser.isAdmin || r.userId===currentUser.id) && <button onClick={() => deleteReview(r.id)} style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, cursor: "pointer" }}><i className="fa-regular fa-trash-can"></i></button>}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{r.comment}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ResourceDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -120,6 +176,9 @@ const ResourceDetailPage = () => {
                 <div><div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Rating</div><div style={{ fontWeight: 700, color: 'var(--warning)', marginTop: '2px' }}><i className="fa-solid fa-star"></i> {resource.rating}</div></div>
               </div>
             </div>
+
+            {/* Reviews — normal user can add, admin sees live */}
+            <ReviewsSection resource={resource} />
           </motion.div>
         </div>
 

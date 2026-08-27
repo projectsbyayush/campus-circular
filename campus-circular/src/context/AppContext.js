@@ -46,6 +46,8 @@ export const AppProvider = ({ children }) => {
   const [allDisputes, setAllDisputes] = useState(() => load("cc_disputes", seedDisputes));
   const [allNotifications, setAllNotifications] = useState(() => load("cc_notifications", seedNotifications));
   const [pendingList, setPendingList] = useState(() => load("cc_pending", seedPending));
+  // Reviews: {id, resourceId, userId, userName, avatar, rating, comment, at, helpful}
+  const [allReviews, setAllReviews] = useState(() => load("cc_reviews", []));
   const [currentUser, setCurrentUser] = useState(() => {
     const id = load("cc_currentUserId", 1);
     const found = (load("cc_users", seedUsers).find(u => u.id === id)) || seedUsers.find(u => u.id === id) || seedUsers[0];
@@ -94,6 +96,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => save("cc_disputes", allDisputes), [allDisputes]);
   useEffect(() => save("cc_notifications", allNotifications), [allNotifications]);
   useEffect(() => save("cc_pending", pendingList), [pendingList]);
+  useEffect(() => save("cc_reviews", allReviews), [allReviews]);
   useEffect(() => save("cc_currentUserId", currentUser.id), [currentUser.id]);
   useEffect(() => { try { localStorage.setItem("cc_isAuth", String(isAuthenticated)); } catch {} }, [isAuthenticated]);
 
@@ -104,6 +107,7 @@ export const AppProvider = ({ children }) => {
       if (e.key === "cc_exchanges" && e.newValue) try { setAllExchanges(JSON.parse(e.newValue)); } catch {}
       if (e.key === "cc_notifications" && e.newValue) try { setAllNotifications(JSON.parse(e.newValue)); } catch {}
       if (e.key === "cc_pending" && e.newValue) try { setPendingList(JSON.parse(e.newValue)); } catch {}
+      if (e.key === "cc_reviews" && e.newValue) try { setAllReviews(JSON.parse(e.newValue)); } catch {}
       if (e.key === "cc_currentUserId" && e.newValue) {
         const id = JSON.parse(e.newValue);
         const u = allUsers.find(x => x.id === id);
@@ -311,6 +315,27 @@ export const AppProvider = ({ children }) => {
   };
   const markNotificationRead = (notifId) => setAllNotifications(prev => prev.map((n) => (n.id === notifId ? { ...n, read: true } : n)));
 
+  const addReview = (resourceId, { rating, comment }) => {
+    const review = { id: Date.now(), resourceId, userId: currentUser.id, userName: currentUser.name, avatar: currentUser.avatar, rating: parseInt(rating)||5, comment: comment.trim(), at: new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }), helpful: 0 };
+    setAllReviews(prev => [review, ...prev]);
+    // update resource rating live
+    setAllResources(prev => prev.map(r => {
+      if (r.id !== resourceId) return r;
+      const reviewsFor = [...allReviews.filter(x=>x.resourceId===resourceId), review];
+      const avg = reviewsFor.reduce((s,x)=>s+x.rating,0)/reviewsFor.length;
+      return { ...r, rating: Number(avg.toFixed(1)), totalBorrows: r.totalBorrows };
+    }));
+    // notify owner
+    const res = allResources.find(r=>r.id===resourceId);
+    if (res && res.owner !== currentUser.id) {
+      const notif = { id: Date.now()+5, userId: res.owner, type: "review", resourceId, message: `${currentUser.name} reviewed "${res.name}" — ${rating}★`, time: "just now", read: false };
+      setAllNotifications(prev => [notif, ...prev]);
+    }
+    return review;
+  };
+  const deleteReview = (reviewId) => setAllReviews(prev => prev.filter(r=>r.id!==reviewId));
+  const helpfulReview = (reviewId) => setAllReviews(prev => prev.map(r=>r.id===reviewId ? { ...r, helpful: (r.helpful||0)+1 } : r));
+
   const resetDemo = () => {
     try {
       localStorage.removeItem("cc_resources");
@@ -318,6 +343,7 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem("cc_disputes");
       localStorage.removeItem("cc_notifications");
       localStorage.removeItem("cc_pending");
+      localStorage.removeItem("cc_reviews");
       localStorage.removeItem("cc_currentUserId");
     } catch {}
     setAllResources(seedResources);
@@ -325,14 +351,15 @@ export const AppProvider = ({ children }) => {
     setAllDisputes(seedDisputes);
     setAllNotifications(seedNotifications);
     setPendingList(seedPending);
+    setAllReviews([]);
     setAllUsers(seedUsers);
     setCurrentUser(seedUsers[0]);
   };
 
   const value = {
-    theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, stats, pendingList,
+    theme, toggleTheme, currentUser, isAuthenticated, allUsers, allResources, allExchanges, allDisputes, allNotifications, allReviews, stats, pendingList,
     searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, filters, setFilters, cart, setCart, activeExchanges,
-    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, createUser, deleteResource, toggleAvailability, togglePublic, updateResource, addConditionReport, addExchangeConditionReport, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, resetDemo
+    loginAs, loginWithCredentials, logout, addResource, approveResource, rejectResource, flagResource, suspendUser, createUser, deleteResource, toggleAvailability, togglePublic, updateResource, addConditionReport, addExchangeConditionReport, initiateExchange, confirmAgreement, updateExchangeStatus, revokeExchange, cancelExchange, deleteExchange, raiseDispute, markNotificationRead, addReview, deleteReview, helpfulReview, resetDemo
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

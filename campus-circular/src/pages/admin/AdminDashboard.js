@@ -20,6 +20,7 @@ const AdminDashboard = () => {
       <aside className="admin-sidebar">
         <div className="admin-sidebar-title"><i className="fa-solid fa-shield-halved"></i> Admin Panel</div>
         <Link to="/admin" className="admin-sidebar-link active"><i className="fa-solid fa-chart-simple"></i> Dashboard</Link>
+        <Link to="/admin/analytics" className="admin-sidebar-link"><i className="fa-solid fa-chart-pie"></i> Analytics</Link>
         <Link to="/admin/users" className="admin-sidebar-link"><i className="fa-solid fa-users"></i> Users</Link>
         <Link to="/admin/resources" className="admin-sidebar-link"><i className="fa-solid fa-box"></i> Resources</Link>
         <Link to="/admin/exchanges" className="admin-sidebar-link"><i className="fa-solid fa-arrow-right-arrow-left"></i> Exchanges</Link>
@@ -29,9 +30,12 @@ const AdminDashboard = () => {
       </aside>
 
       <main className="admin-content">
-        <div className="admin-header">
-          <h1 className="admin-title">Dashboard</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Overview of platform activity & fees</p>
+        <div className="admin-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h1 className="admin-title">Dashboard</h1>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Overview of platform activity & fees</p>
+          </div>
+          <Link to="/admin/analytics" className="btn btn-primary btn-sm" style={{ borderRadius: 999 }}><i className="fa-solid fa-chart-pie"></i> View analytics — live graphs & reviews</Link>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "24px" }}>

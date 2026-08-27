@@ -13,6 +13,7 @@ import ListResourcePage from "./pages/ListResourcePage";
 import AiSearchPage from "./pages/AiSearchPage";
 import CampusImpactPage from "./pages/CampusImpactPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminResources from "./pages/admin/AdminResources";
 import AdminExchanges from "./pages/admin/AdminExchanges";
@@ -217,6 +218,7 @@ function AppContent() {
             <Route path="/impact" element={<CampusImpactPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+            <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
             <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
             <Route path="/admin/resources" element={<RequireAdmin><AdminResources /></RequireAdmin>} />
             <Route path="/admin/exchanges" element={<RequireAdmin><AdminExchanges /></RequireAdmin>} />
